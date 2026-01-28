@@ -1,0 +1,85 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Firebase
+.firebase/
+.firebaserc
+firebase-debug.log
+firestore-debug.log*
+ui-debug.log*
+
+# Vercel
+.vercel
+
+# Test coverage
+coverage/
+*.lcov
+.nyc_output
+
+# Build files
+build/
+out/
+.next/
+
+# Temporary files
+*.swp
+*.swo
+*.tmp
+*.temp
+.cache/
+
+# Optional npm cache directory
+.npm
+.eslintcache
+.stylelintcache
+
+# Dependency directories
+jspm_packages/
+bower_components/
+
+# MacOS
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+
+# Linux
+*~
+.directory
+.Trash-*
+

@@ -1,0 +1,12 @@
+node_modules
+dist
+build
+.firebase
+.vercel
+*.log
+.env
+.env.local
+.env.production
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
