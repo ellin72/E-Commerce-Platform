@@ -106,7 +106,7 @@ export const Navbar: React.FC = () => {
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="sm:hidden p-2 rounded-md text-gray-700 hover:text-primary-600"
-                title={mobileMenuOpen ? "Close menu" : "Open menu"}
+                title={mobileMenuOpen ? 'Close menu' : 'Open menu'}
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   {mobileMenuOpen ? (
