@@ -3,7 +3,6 @@ import { getAllProducts, searchProducts, getProductsByCategory } from '../servic
 import { addToCart } from '../services/cartService';
 import { Product } from '../types';
 import { useAuth } from '../contexts/AuthContext';
-import { Link } from 'react-router-dom';
 
 export const ProductList: React.FC = () => {
     const [products, setProducts] = useState<Product[]>([]);

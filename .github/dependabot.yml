@@ -1,49 +1,47 @@
 version: 2
 updates:
   # Enable version updates for npm
-  - package-ecosystem: "npm"
-    directory: "/"
+  - package-ecosystem: 'npm'
+    directory: '/'
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: 'weekly'
+      day: 'monday'
     open-pull-requests-limit: 10
-    reviewers:
-      - "ellin72"
     labels:
-      - "dependencies"
-      - "automated"
+      - 'dependencies'
+      - 'automated'
     commit-message:
-      prefix: "chore"
-      include: "scope"
+      prefix: 'chore'
+      include: 'scope'
     # Group updates for better management
     groups:
       react:
         patterns:
-          - "react*"
+          - 'react*'
       firebase:
         patterns:
-          - "firebase*"
+          - 'firebase*'
       typescript:
         patterns:
-          - "*typescript*"
-          - "@types/*"
+          - '*typescript*'
+          - '@types/*'
       dev-dependencies:
-        dependency-type: "development"
+        dependency-type: 'development'
     # Ignore specific packages if needed
     ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
     # Enable automatic security updates
     versioning-strategy: increase
 
   # Enable version updates for GitHub Actions
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: 'github-actions'
+    directory: '/'
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: 'weekly'
+      day: 'monday'
     labels:
-      - "github-actions"
-      - "dependencies"
+      - 'github-actions'
+      - 'dependencies'
     commit-message:
-      prefix: "ci"
+      prefix: 'ci'
