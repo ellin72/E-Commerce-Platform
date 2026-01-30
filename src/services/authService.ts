@@ -1,5 +1,8 @@
 import { supabase } from '../lib/supabaseClient';
 import { User } from '../types';
+import type { Database } from '../types/database.types';
+
+type ProfileRow = Database['public']['Tables']['profiles']['Row'];
 
 /**
  * Retry helper with exponential backoff for rate-limited requests
@@ -104,8 +107,8 @@ export const signInWithEmail = async (email: string, password: string): Promise<
   return userProfile;
 };
 
-export const signInWithGoogle = async (): Promise<User> => {
-  const { data, error } = await supabase.auth.signInWithOAuth({
+export const signInWithGoogle = async (): Promise<void> => {
+  const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
   });
 
@@ -113,17 +116,7 @@ export const signInWithGoogle = async (): Promise<User> => {
     throw new Error(`Google sign in failed: ${error.message}`);
   }
 
-  if (!data.user) {
-    throw new Error('Google sign in failed: No user returned');
-  }
-
-  // Profile will be auto-created via trigger
-  const userProfile = await getUserData(data.user.id);
-  if (!userProfile) {
-    throw new Error('Failed to fetch user profile');
-  }
-
-  return userProfile;
+  // OAuth redirects to provider, user data will be available after redirect
 };
 
 /**
@@ -158,13 +151,14 @@ export const getUserData = async (userId: string): Promise<User | null> => {
     return null;
   }
 
+  const profileData = data as ProfileRow;
   return {
-    uid: data.id,
-    email: data.email,
-    displayName: data.display_name,
-    photoURL: data.photo_url,
-    role: data.role as 'user' | 'admin',
-    createdAt: new Date(data.created_at),
+    uid: profileData.id,
+    email: profileData.email,
+    displayName: profileData.display_name,
+    photoURL: profileData.photo_url,
+    role: profileData.role as 'user' | 'admin',
+    createdAt: new Date(profileData.created_at),
   };
 };
 
@@ -191,7 +185,7 @@ export const getSession = async () => {
  * Listen to auth state changes
  */
 export const onAuthStateChanged = (callback: (user: User | null) => void) => {
-  const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+  const { data } = supabase.auth.onAuthStateChange(async (_event, session) => {
     if (session?.user) {
       const userProfile = await getUserData(session.user.id);
       callback(userProfile);

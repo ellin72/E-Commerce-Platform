@@ -1,6 +1,10 @@
 import { supabase } from '../lib/supabaseClient';
-import { Order, Cart } from '../types';
+import { Order, Cart, OrderItem } from '../types';
+import type { Database } from '../types/database.types';
 import { clearCart } from './cartService';
+
+type ShippingAddress = Order['shippingAddress'];
+type OrderRow = Database['public']['Tables']['orders']['Row'];
 
 /**
  * Create a new order
@@ -70,14 +74,15 @@ export const getOrder = async (orderId: string): Promise<Order | null> => {
     return null;
   }
 
+  const orderData = data as OrderRow;
   return {
-    id: data.id,
-    userId: data.user_id,
-    items: data.items,
-    total: data.total,
-    status: data.status,
-    createdAt: new Date(data.created_at),
-    shippingAddress: data.shipping_address,
+    id: orderData.id,
+    userId: orderData.user_id,
+    items: orderData.items as unknown as OrderItem[],
+    total: orderData.total,
+    status: orderData.status,
+    createdAt: new Date(orderData.created_at),
+    shippingAddress: orderData.shipping_address as unknown as ShippingAddress,
   };
 };
 
@@ -99,15 +104,18 @@ export const getUserOrders = async (userId: string): Promise<Order[]> => {
     return [];
   }
 
-  return data.map((order) => ({
-    id: order.id,
-    userId: order.user_id,
-    items: order.items,
-    total: order.total,
-    status: order.status,
-    createdAt: new Date(order.created_at),
-    shippingAddress: order.shipping_address,
-  }));
+  return data.map((order) => {
+    const orderData = order as OrderRow;
+    return {
+      id: orderData.id,
+      userId: orderData.user_id,
+      items: orderData.items as unknown as OrderItem[],
+      total: orderData.total,
+      status: orderData.status,
+      createdAt: new Date(orderData.created_at),
+      shippingAddress: orderData.shipping_address as unknown as ShippingAddress,
+    };
+  });
 };
 
 /**
@@ -127,15 +135,18 @@ export const getAllOrders = async (): Promise<Order[]> => {
     return [];
   }
 
-  return data.map((order) => ({
-    id: order.id,
-    userId: order.user_id,
-    items: order.items,
-    total: order.total,
-    status: order.status,
-    createdAt: new Date(order.created_at),
-    shippingAddress: order.shipping_address,
-  }));
+  return data.map((order) => {
+    const orderData = order as OrderRow;
+    return {
+      id: orderData.id,
+      userId: orderData.user_id,
+      items: orderData.items as unknown as OrderItem[],
+      total: orderData.total,
+      status: orderData.status,
+      createdAt: new Date(orderData.created_at),
+      shippingAddress: orderData.shipping_address as unknown as ShippingAddress,
+    };
+  });
 };
 
 /**

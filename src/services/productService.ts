@@ -1,5 +1,8 @@
-import { supabase, uploadFile, deleteFile, getPublicUrl } from '../lib/supabaseClient';
+import { supabase, uploadFile, deleteFile } from '../lib/supabaseClient';
 import { Product, CreateProductDto, UpdateProductDto } from '../types';
+import type { Database } from '../types/database.types';
+
+type ProductRow = Database['public']['Tables']['products']['Row'];
 
 const PRODUCT_BUCKET = 'product-images';
 
@@ -127,16 +130,17 @@ export const getProduct = async (productId: string): Promise<Product | null> => 
     return null;
   }
 
+  const productData = data as ProductRow;
   return {
-    id: data.id,
-    name: data.name,
-    description: data.description,
-    price: data.price,
-    category: data.category,
-    imageUrl: data.image_url,
-    stock: data.stock,
-    createdAt: new Date(data.created_at),
-    updatedAt: new Date(data.updated_at),
+    id: productData.id,
+    name: productData.name,
+    description: productData.description,
+    price: productData.price,
+    category: productData.category,
+    imageUrl: productData.image_url,
+    stock: productData.stock,
+    createdAt: new Date(productData.created_at),
+    updatedAt: new Date(productData.updated_at),
   };
 };
 
@@ -157,17 +161,20 @@ export const getAllProducts = async (): Promise<Product[]> => {
     return [];
   }
 
-  return data.map((product) => ({
-    id: product.id,
-    name: product.name,
-    description: product.description,
-    price: product.price,
-    category: product.category,
-    imageUrl: product.image_url,
-    stock: product.stock,
-    createdAt: new Date(product.created_at),
-    updatedAt: new Date(product.updated_at),
-  }));
+  return data.map((product) => {
+    const productData = product as ProductRow;
+    return {
+      id: productData.id,
+      name: productData.name,
+      description: productData.description,
+      price: productData.price,
+      category: productData.category,
+      imageUrl: productData.image_url,
+      stock: productData.stock,
+      createdAt: new Date(productData.created_at),
+      updatedAt: new Date(productData.updated_at),
+    };
+  });
 };
 
 /**
@@ -188,17 +195,20 @@ export const getProductsByCategory = async (category: string): Promise<Product[]
     return [];
   }
 
-  return data.map((product) => ({
-    id: product.id,
-    name: product.name,
-    description: product.description,
-    price: product.price,
-    category: product.category,
-    imageUrl: product.image_url,
-    stock: product.stock,
-    createdAt: new Date(product.created_at),
-    updatedAt: new Date(product.updated_at),
-  }));
+  return data.map((product) => {
+    const productData = product as ProductRow;
+    return {
+      id: productData.id,
+      name: productData.name,
+      description: productData.description,
+      price: productData.price,
+      category: productData.category,
+      imageUrl: productData.image_url,
+      stock: productData.stock,
+      createdAt: new Date(productData.created_at),
+      updatedAt: new Date(productData.updated_at),
+    };
+  });
 };
 
 /**

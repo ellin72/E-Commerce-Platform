@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { createProduct, updateProduct, getProduct } from '../services/productService';
-import { Product } from '../types';
 
 export const ProductForm: React.FC = () => {
   const { id } = useParams<{ id: string }>();
