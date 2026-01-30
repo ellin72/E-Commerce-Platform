@@ -1,84 +1,99 @@
-import {
-    doc,
-    getDoc,
-    setDoc,
-    updateDoc,
-    serverTimestamp,
-    Timestamp,
-} from 'firebase/firestore';
-import { db } from '../config/firebase';
-import { Cart } from '../types';
+import { supabase } from '../lib/supabaseClient';
+import { Cart, CartItem } from '../types';
 import { getProduct } from './productService';
 
-const CARTS_COLLECTION = 'carts';
-
-const convertTimestamp = (timestamp: Timestamp | Date): Date => {
-    if (timestamp instanceof Timestamp) {
-        return timestamp.toDate();
-    }
-    return timestamp;
-};
-
+/**
+ * Get all cart items for a user
+ */
 export const getCart = async (userId: string): Promise<Cart> => {
-    const cartDoc = await getDoc(doc(db, CARTS_COLLECTION, userId));
+    const { data, error } = await supabase
+        .from('cart_items')
+        .select('id, product_id, quantity, updated_at')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
 
-    if (!cartDoc.exists()) {
-        // Create empty cart if doesn't exist
-        const emptyCart: Omit<Cart, 'updatedAt'> = {
-            userId,
-            items: [],
-        };
-
-        await setDoc(doc(db, CARTS_COLLECTION, userId), {
-            ...emptyCart,
-            updatedAt: serverTimestamp(),
-        });
-
-        return {
-            ...emptyCart,
-            updatedAt: new Date(),
-        };
+    if (error) {
+        throw new Error(`Get cart failed: ${error.message}`);
     }
 
-    const data = cartDoc.data();
+    const items: CartItem[] = (data || []).map((item) => ({
+        productId: item.product_id,
+        quantity: item.quantity,
+    }));
+
     return {
-        ...data,
-        updatedAt: convertTimestamp(data.updatedAt),
-    } as Cart;
+        userId,
+        items,
+        updatedAt: new Date(),
+    };
 };
 
+/**
+ * Add item to cart (or update quantity if already exists)
+ */
 export const addToCart = async (
     userId: string,
     productId: string,
     quantity: number = 1
 ): Promise<void> => {
-    const cart = await getCart(userId);
-    const existingItemIndex = cart.items.findIndex((item) => item.productId === productId);
+    // Check if item already exists
+    const { data: existingItem, error: selectError } = await supabase
+        .from('cart_items')
+        .select('id, quantity')
+        .eq('user_id', userId)
+        .eq('product_id', productId)
+        .single();
 
-    if (existingItemIndex >= 0) {
-        // Update quantity if item already in cart
-        cart.items[existingItemIndex].quantity += quantity;
-    } else {
-        // Add new item
-        cart.items.push({ productId, quantity });
+    if (selectError && selectError.code !== 'PGRST116') {
+        throw new Error(`Add to cart failed: ${selectError.message}`);
     }
 
-    await updateDoc(doc(db, CARTS_COLLECTION, userId), {
-        items: cart.items,
-        updatedAt: serverTimestamp(),
-    });
+    if (existingItem) {
+        // Update existing item
+        const { error: updateError } = await supabase
+            .from('cart_items')
+            .update({ quantity: existingItem.quantity + quantity })
+            .eq('id', existingItem.id);
+
+        if (updateError) {
+            throw new Error(`Update cart item failed: ${updateError.message}`);
+        }
+    } else {
+        // Insert new item
+        const { error: insertError } = await supabase
+            .from('cart_items')
+            .insert([
+                {
+                    user_id: userId,
+                    product_id: productId,
+                    quantity,
+                },
+            ]);
+
+        if (insertError) {
+            throw new Error(`Insert cart item failed: ${insertError.message}`);
+        }
+    }
 };
 
+/**
+ * Remove item from cart
+ */
 export const removeFromCart = async (userId: string, productId: string): Promise<void> => {
-    const cart = await getCart(userId);
-    cart.items = cart.items.filter((item) => item.productId !== productId);
+    const { error } = await supabase
+        .from('cart_items')
+        .delete()
+        .eq('user_id', userId)
+        .eq('product_id', productId);
 
-    await updateDoc(doc(db, CARTS_COLLECTION, userId), {
-        items: cart.items,
-        updatedAt: serverTimestamp(),
-    });
+    if (error) {
+        throw new Error(`Remove from cart failed: ${error.message}`);
+    }
 };
 
+/**
+ * Update cart item quantity
+ */
 export const updateCartItemQuantity = async (
     userId: string,
     productId: string,
@@ -89,15 +104,53 @@ export const updateCartItemQuantity = async (
         return;
     }
 
+    const { error } = await supabase
+        .from('cart_items')
+        .update({ quantity })
+        .eq('user_id', userId)
+        .eq('product_id', productId);
+
+    if (error) {
+        throw new Error(`Update cart quantity failed: ${error.message}`);
+    }
+};
+
+/**
+ * Clear all items from cart
+ */
+export const clearCart = async (userId: string): Promise<void> => {
+    const { error } = await supabase
+        .from('cart_items')
+        .delete()
+        .eq('user_id', userId);
+
+    if (error) {
+        throw new Error(`Clear cart failed: ${error.message}`);
+    }
+};
+
+/**
+ * Get cart with product details
+ */
+export const getCartWithProducts = async (userId: string): Promise<Cart> => {
     const cart = await getCart(userId);
-    const itemIndex = cart.items.findIndex((item) => item.productId === productId);
 
-    if (itemIndex >= 0) {
-        cart.items[itemIndex].quantity = quantity;
+    // Fetch product details for each item
+    const itemsWithProducts = await Promise.all(
+        cart.items.map(async (item) => {
+            const product = await getProduct(item.productId);
+            return {
+                ...item,
+                product: product || undefined,
+            };
+        })
+    );
 
-        await updateDoc(doc(db, CARTS_COLLECTION, userId), {
-            items: cart.items,
-            updatedAt: serverTimestamp(),
+    return {
+        ...cart,
+        items: itemsWithProducts,
+    };
+};
         });
     }
 };

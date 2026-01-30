@@ -1,106 +1,163 @@
-import {
-    createUserWithEmailAndPassword,
-    signInWithEmailAndPassword,
-    signInWithPopup,
-    GoogleAuthProvider,
-    signOut as firebaseSignOut,
-    User as FirebaseUser,
-    onAuthStateChanged,
-} from 'firebase/auth';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '../config/firebase';
+import { supabase } from '../lib/supabaseClient';
 import { User } from '../types';
 
-const googleProvider = new GoogleAuthProvider();
-
+/**
+ * Sign up with email and password
+ */
 export const signUpWithEmail = async (
-    email: string,
-    password: string,
-    displayName: string
+  email: string,
+  password: string,
+  displayName: string
 ): Promise<User> => {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const firebaseUser = userCredential.user;
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        display_name: displayName,
+      },
+    },
+  });
 
-    // Create user document in Firestore
-    const userData: Omit<User, 'uid'> = {
-        email: firebaseUser.email,
-        displayName,
-        photoURL: firebaseUser.photoURL,
-        role: 'user',
-        createdAt: new Date(),
-    };
+  if (error) {
+    throw new Error(`Sign up failed: ${error.message}`);
+  }
 
-    await setDoc(doc(db, 'users', firebaseUser.uid), {
-        ...userData,
-        createdAt: serverTimestamp(),
-    });
+  if (!data.user) {
+    throw new Error('Sign up failed: No user returned');
+  }
 
-    return {
-        uid: firebaseUser.uid,
-        ...userData,
-    };
+  // Fetch the newly created profile
+  const userProfile = await getUserData(data.user.id);
+  if (!userProfile) {
+    throw new Error('Failed to create user profile');
+  }
+
+  return userProfile;
 };
 
-export const signInWithEmail = async (
-    email: string,
-    password: string
-): Promise<FirebaseUser> => {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    return userCredential.user;
+/**
+ * Sign in with email and password
+ */
+export const signInWithEmail = async (email: string, password: string): Promise<User> => {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) {
+    throw new Error(`Sign in failed: ${error.message}`);
+  }
+
+  if (!data.user) {
+    throw new Error('Sign in failed: No user returned');
+  }
+
+  // Fetch user profile
+  const userProfile = await getUserData(data.user.id);
+  if (!userProfile) {
+    throw new Error('Failed to fetch user profile');
+  }
+
+  return userProfile;
 };
 
 export const signInWithGoogle = async (): Promise<User> => {
-    const userCredential = await signInWithPopup(auth, googleProvider);
-    const firebaseUser = userCredential.user;
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+  });
 
-    // Check if user document exists, create if not
-    const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+  if (error) {
+    throw new Error(`Google sign in failed: ${error.message}`);
+  }
 
-    if (!userDoc.exists()) {
-        const userData: Omit<User, 'uid'> = {
-            email: firebaseUser.email,
-            displayName: firebaseUser.displayName,
-            photoURL: firebaseUser.photoURL,
-            role: 'user',
-            createdAt: new Date(),
-        };
+  if (!data.user) {
+    throw new Error('Google sign in failed: No user returned');
+  }
 
-        await setDoc(doc(db, 'users', firebaseUser.uid), {
-            ...userData,
-            createdAt: serverTimestamp(),
-        });
+  // Profile will be auto-created via trigger
+  const userProfile = await getUserData(data.user.id);
+  if (!userProfile) {
+    throw new Error('Failed to fetch user profile');
+  }
 
-        return {
-            uid: firebaseUser.uid,
-            ...userData,
-        };
-    }
-
-    return userDoc.data() as User;
+  return userProfile;
 };
 
+/**
+ * Get current user from session
+ */
+export const getCurrentUser = async (): Promise<User | null> => {
+  const { data } = await supabase.auth.getUser();
+
+  if (!data.user) {
+    return null;
+  }
+
+  return getUserData(data.user.id);
+};
+
+/**
+ * Get user data from profiles table
+ */
+export const getUserData = async (userId: string): Promise<User | null> => {
+  const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
+
+  if (error) {
+    if (error.code === 'PGRST116') {
+      // No rows returned
+      return null;
+    }
+    console.error('Error fetching user data:', error);
+    return null;
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  return {
+    uid: data.id,
+    email: data.email,
+    displayName: data.display_name,
+    photoURL: data.photo_url,
+    role: data.role as 'user' | 'admin',
+    createdAt: new Date(data.created_at),
+  };
+};
+
+/**
+ * Sign out current user
+ */
 export const signOut = async (): Promise<void> => {
-    await firebaseSignOut(auth);
+  const { error } = await supabase.auth.signOut();
+
+  if (error) {
+    throw new Error(`Sign out failed: ${error.message}`);
+  }
 };
 
-export const getCurrentUser = (): Promise<FirebaseUser | null> => {
-    return new Promise((resolve) => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            unsubscribe();
-            resolve(user);
-        });
-    });
+/**
+ * Get current session
+ */
+export const getSession = async () => {
+  const { data } = await supabase.auth.getSession();
+  return data.session;
 };
 
-export const getUserData = async (uid: string): Promise<User | null> => {
-    const userDoc = await getDoc(doc(db, 'users', uid));
-
-    if (!userDoc.exists()) {
-        return null;
+/**
+ * Listen to auth state changes
+ */
+export const onAuthStateChanged = (callback: (user: User | null) => void) => {
+  const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+    if (session?.user) {
+      const userProfile = await getUserData(session.user.id);
+      callback(userProfile);
+    } else {
+      callback(null);
     }
+  });
 
-    return {
-        uid,
-        ...userDoc.data(),
-    } as User;
+  // Return unsubscribe function
+  return data.subscription.unsubscribe;
 };

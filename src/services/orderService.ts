@@ -1,113 +1,153 @@
-import {
-    collection,
-    addDoc,
-    doc,
-    getDoc,
-    getDocs,
-    query,
-    where,
-    orderBy,
-    serverTimestamp,
-    Timestamp,
-} from 'firebase/firestore';
-import { db } from '../config/firebase';
+import { supabase } from '../lib/supabaseClient';
 import { Order, Cart } from '../types';
 import { clearCart } from './cartService';
 
-const ORDERS_COLLECTION = 'orders';
-
-const convertTimestamp = (timestamp: Timestamp | Date): Date => {
-    if (timestamp instanceof Timestamp) {
-        return timestamp.toDate();
-    }
-    return timestamp;
-};
-
+/**
+ * Create a new order
+ */
 export const createOrder = async (
-    userId: string,
-    cart: Cart,
-    shippingAddress: Order['shippingAddress']
+  userId: string,
+  cart: Cart,
+  shippingAddress: Order['shippingAddress']
 ): Promise<string> => {
-    // Calculate total
-    const total = cart.items.reduce((sum, item) => {
-        if (item.product) {
-            return sum + item.product.price * item.quantity;
-        }
-        return sum;
-    }, 0);
+  // Calculate total
+  const total = cart.items.reduce((sum, item) => {
+    if (item.product) {
+      return sum + item.product.price * item.quantity;
+    }
+    return sum;
+  }, 0);
 
-    // Prepare order items
-    const orderItems = cart.items
-        .filter((item) => item.product)
-        .map((item) => ({
-            productId: item.productId,
-            productName: item.product!.name,
-            price: item.product!.price,
-            quantity: item.quantity,
-            imageUrl: item.product!.imageUrl,
-        }));
+  // Prepare order items
+  const orderItems = cart.items
+    .filter((item) => item.product)
+    .map((item) => ({
+      productId: item.productId,
+      productName: item.product!.name,
+      price: item.product!.price,
+      quantity: item.quantity,
+      imageUrl: item.product!.imageUrl,
+    }));
 
-    const orderData = {
-        userId,
+  const { data, error } = await supabase
+    .from('orders')
+    .insert([
+      {
+        user_id: userId,
         items: orderItems,
         total,
-        status: 'pending' as const,
-        shippingAddress,
-        createdAt: serverTimestamp(),
-    };
+        status: 'pending',
+        shipping_address: shippingAddress,
+      },
+    ])
+    .select('id')
+    .single();
 
-    const docRef = await addDoc(collection(db, ORDERS_COLLECTION), orderData);
+  if (error) {
+    throw new Error(`Create order failed: ${error.message}`);
+  }
 
-    // Clear the cart after order is created
-    await clearCart(userId);
+  // Clear the cart after order is created
+  await clearCart(userId);
 
-    return docRef.id;
+  return data.id;
 };
 
+/**
+ * Get a single order by ID
+ */
 export const getOrder = async (orderId: string): Promise<Order | null> => {
-    const orderDoc = await getDoc(doc(db, ORDERS_COLLECTION, orderId));
+  const { data, error } = await supabase.from('orders').select('*').eq('id', orderId).single();
 
-    if (!orderDoc.exists()) {
-        return null;
+  if (error) {
+    if (error.code === 'PGRST116') {
+      return null;
     }
+    throw new Error(`Get order failed: ${error.message}`);
+  }
 
-    const data = orderDoc.data();
-    return {
-        id: orderDoc.id,
-        ...data,
-        createdAt: convertTimestamp(data.createdAt),
-    } as Order;
+  if (!data) {
+    return null;
+  }
+
+  return {
+    id: data.id,
+    userId: data.user_id,
+    items: data.items,
+    total: data.total,
+    status: data.status,
+    createdAt: new Date(data.created_at),
+    shippingAddress: data.shipping_address,
+  };
 };
 
+/**
+ * Get all orders for a specific user
+ */
 export const getUserOrders = async (userId: string): Promise<Order[]> => {
-    const q = query(
-        collection(db, ORDERS_COLLECTION),
-        where('userId', '==', userId),
-        orderBy('createdAt', 'desc')
-    );
+  const { data, error } = await supabase
+    .from('orders')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
 
-    const querySnapshot = await getDocs(q);
+  if (error) {
+    throw new Error(`Get user orders failed: ${error.message}`);
+  }
 
-    return querySnapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-            id: doc.id,
-            ...data,
-            createdAt: convertTimestamp(data.createdAt),
-        } as Order;
-    });
+  if (!data) {
+    return [];
+  }
+
+  return data.map((order) => ({
+    id: order.id,
+    userId: order.user_id,
+    items: order.items,
+    total: order.total,
+    status: order.status,
+    createdAt: new Date(order.created_at),
+    shippingAddress: order.shipping_address,
+  }));
 };
 
+/**
+ * Get all orders (admin only - RLS will restrict)
+ */
 export const getAllOrders = async (): Promise<Order[]> => {
-    const q = query(collection(db, ORDERS_COLLECTION), orderBy('createdAt', 'desc'));
-    const querySnapshot = await getDocs(q);
+  const { data, error } = await supabase
+    .from('orders')
+    .select('*')
+    .order('created_at', { ascending: false });
 
-    return querySnapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-            id: doc.id,
-            ...data,
-            createdAt: convertTimestamp(data.createdAt),
-        } as Order;
-    });
+  if (error) {
+    throw new Error(`Get all orders failed: ${error.message}`);
+  }
+
+  if (!data) {
+    return [];
+  }
+
+  return data.map((order) => ({
+    id: order.id,
+    userId: order.user_id,
+    items: order.items,
+    total: order.total,
+    status: order.status,
+    createdAt: new Date(order.created_at),
+    shippingAddress: order.shipping_address,
+  }));
+};
+
+/**
+ * Update order status (admin only - RLS will restrict)
+ */
+export const updateOrderStatus = async (
+  orderId: string,
+  status: Order['status']
+): Promise<void> => {
+  const { error } = await supabase.from('orders').update({ status }).eq('id', orderId);
+
+  if (error) {
+    throw new Error(`Update order status failed: ${error.message}`);
+  }
 };
