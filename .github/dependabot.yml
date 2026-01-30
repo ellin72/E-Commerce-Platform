@@ -18,9 +18,6 @@ updates:
       react:
         patterns:
           - 'react*'
-      firebase:
-        patterns:
-          - 'firebase*'
       typescript:
         patterns:
           - '*typescript*'
