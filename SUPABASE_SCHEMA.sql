@@ -1,5 +1,6 @@
 -- Supabase Database Schema for E-Commerce Platform
 -- This file contains all the SQL needed to set up the database
+-- PostgreSQL Syntax - Execute in Supabase SQL Editor, not in IDE validators
 
 -- ============================================================================
 -- ENABLE EXTENSIONS
