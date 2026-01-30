@@ -20,6 +20,7 @@ We take the security of our E-Commerce Platform seriously. If you believe you ha
 Instead, please report them via email to: **security@shophub.com** (or create a private security advisory on GitHub)
 
 You can also report vulnerabilities through GitHub's Security Advisory feature:
+
 1. Go to the repository's Security tab
 2. Click "Report a vulnerability"
 3. Fill out the form with details
@@ -54,7 +55,7 @@ Please include the following information in your report:
 ### For Users
 
 1. **Environment Variables**: Never commit `.env` files to version control
-2. **Firebase Configuration**: Keep your Firebase API keys secure and use Firebase security rules
+2. **Supabase Configuration**: Keep your Supabase keys secure and use Row Level Security
 3. **Authentication**: Use strong passwords and enable 2FA where possible
 4. **Updates**: Keep your dependencies up to date
 5. **HTTPS**: Always use HTTPS in production
@@ -62,18 +63,19 @@ Please include the following information in your report:
 ### For Developers
 
 1. **Input Validation**: Always validate and sanitize user inputs
-2. **Authentication**: Use Firebase Auth properly and never bypass security
+2. **Authentication**: Use Supabase Auth properly and never bypass security
 3. **Authorization**: Implement proper role-based access control
 4. **Dependencies**: Regularly update dependencies and audit for vulnerabilities
 5. **Code Review**: All code changes should be reviewed before merging
 6. **Secrets**: Use environment variables for all secrets and API keys
-7. **Firebase Rules**: Implement strict Firestore and Storage security rules
+7. **RLS Policies**: Implement strict Row Level Security policies
 
 ## Known Security Considerations
 
-### Firebase Security Rules
+### Row Level Security (RLS)
 
-Our Firestore and Storage security rules are designed to:
+Our Supabase RLS policies are designed to:
+
 - Restrict product management to admin users only
 - Ensure users can only access their own cart and orders
 - Validate data structure and authentication
@@ -81,18 +83,18 @@ Our Firestore and Storage security rules are designed to:
 
 ### Data Privacy
 
-- User data is stored in Firebase Firestore
+- User data is stored in Supabase PostgreSQL
 - Personal information is only accessible by the user who owns it
 - Admin users can view orders for management purposes
 - No payment information is stored (simulated checkout only)
 
 ## Security Features
 
-- ✅ Firebase Authentication with email/password and Google OAuth
+- ✅ Supabase Authentication with email/password and Google OAuth
 - ✅ Protected routes for authenticated users
 - ✅ Admin-only routes with role verification
-- ✅ Firestore security rules for data protection
-- ✅ Storage security rules for image uploads
+- ✅ Row Level Security (RLS) for data protection
+- ✅ Storage policies for image uploads
 - ✅ TypeScript for type safety
 - ✅ Input validation on forms
 - ✅ Environment variable configuration

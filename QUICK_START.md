@@ -116,7 +116,7 @@ Open http://localhost:5173 in browser
 
    ```bash
    git add .
-   git commit -m "Migrate from Firebase to Supabase"
+   git commit -m "Update e-commerce platform"
    git push origin main
    ```
 

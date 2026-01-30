@@ -6,9 +6,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.2-blue.svg)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18.2-blue.svg)](https://reactjs.org/)
-[![Firebase](https://img.shields.io/badge/Firebase-10.7-orange.svg)](https://firebase.google.com/)
+[![Supabase](https://img.shields.io/badge/Supabase-2.38-green.svg)](https://supabase.com/)
 
-A modern, full-featured e-commerce platform built with React, TypeScript, Tailwind CSS, and Firebase.
+A modern, full-featured e-commerce platform built with React, TypeScript, Tailwind CSS, and Supabase.
 
 ## 🚀 Features
 
@@ -24,20 +24,21 @@ A modern, full-featured e-commerce platform built with React, TypeScript, Tailwi
 ### Admin Features
 
 - **Product Management**: Create, read, update, and delete products
-- **Image Upload**: Upload product images to Firebase Storage
+- **Image Upload**: Upload product images to Supabase Storage
 - **Dashboard**: View product statistics and manage inventory
-- **Role-Based Access**: Secure admin routes with Firestore rules
+- **Role-Based Access**: Secure admin routes with Row Level Security (RLS)
 
 ## 🛠️ Tech Stack
 
 - **Frontend**: React 18 with TypeScript
 - **Styling**: Tailwind CSS
-- **Backend/Database**: Firebase
+- **Backend/Database**: Supabase
   - Authentication (Email/Password + Google OAuth)
-  - Firestore (Database)
+  - PostgreSQL Database
   - Storage (Product Images)
+  - Row Level Security (RLS)
 - **Build Tool**: Vite
-- **Hosting**: Firebase Hosting / Vercel / Netlify
+- **Hosting**: Vercel / Netlify
 
 ## 📦 Project Structure
 
@@ -51,8 +52,8 @@ E-Commerce-Platform/
 │   │   ├── Navbar.tsx
 │   │   ├── ProductList.tsx
 │   │   └── ProtectedRoute.tsx
-│   ├── config/             # Configuration files
-│   │   └── firebase.ts
+│   ├── lib/                # Supabase client
+│   │   └── supabaseClient.ts
 │   ├── contexts/           # React contexts
 │   │   └── AuthContext.tsx
 │   ├── pages/              # Page components
@@ -62,7 +63,7 @@ E-Commerce-Platform/
 │   │   ├── Orders.tsx
 │   │   ├── ProductForm.tsx
 │   │   └── SignUp.tsx
-│   ├── services/           # Firebase service functions
+│   ├── services/           # Supabase service functions
 │   │   ├── authService.ts
 │   │   ├── cartService.ts
 │   │   ├── orderService.ts
@@ -72,10 +73,6 @@ E-Commerce-Platform/
 │   ├── App.tsx
 │   ├── main.tsx
 │   └── index.css
-├── firebase.json           # Firebase configuration
-├── firestore.rules         # Firestore security rules
-├── firestore.indexes.json  # Firestore indexes
-├── storage.rules           # Storage security rules
 ├── vercel.json            # Vercel configuration
 ├── package.json
 ├── tsconfig.json
@@ -88,7 +85,7 @@ E-Commerce-Platform/
 ### Prerequisites
 
 - Node.js 18+ and npm
-- Firebase account
+- Supabase account
 - Git
 
 ### Step 1: Clone and Install Dependencies
@@ -101,35 +98,27 @@ cd E-Commerce-Platform
 npm install
 ```
 
-### Step 2: Firebase Setup
+### Step 2: Supabase Setup
 
-1. **Create a Firebase Project**
-   - Go to [Firebase Console](https://console.firebase.google.com/)
-   - Click "Add Project" and follow the setup wizard
-   - Enable Google Analytics (optional)
+1. **Create a Supabase Project**
+   - Go to [Supabase Dashboard](https://app.supabase.com/)
+   - Click "New Project" and follow the setup wizard
+   - Note your project URL and anon key
 
-2. **Enable Authentication**
-   - In Firebase Console, go to Authentication > Sign-in method
-   - Enable "Email/Password"
-   - Enable "Google" sign-in provider
+2. **Set Up Database Schema**
+   - Go to SQL Editor in your Supabase dashboard
+   - Copy the contents of `SUPABASE_SCHEMA.sql`
+   - Execute the SQL to create tables and set up Row Level Security
 
-3. **Create Firestore Database**
-   - Go to Firestore Database
-   - Click "Create database"
-   - Start in **production mode** (we'll deploy security rules later)
-   - Choose a location closest to your users
+3. **Enable Authentication**
+   - Go to Authentication > Providers
+   - Email provider is enabled by default
+   - Configure Google OAuth if desired
 
-4. **Create Storage Bucket**
+4. **Set Up Storage**
    - Go to Storage
-   - Click "Get started"
-   - Start in **production mode**
-   - Use the default storage location
-
-5. **Get Firebase Configuration**
-   - Go to Project Settings (gear icon)
-   - Scroll down to "Your apps"
-   - Click the web icon (</>)
-   - Register your app and copy the config
+   - Create a bucket named `product-images`
+   - Set it to public access for product images
 
 ### Step 3: Environment Configuration
 
@@ -139,48 +128,21 @@ npm install
 cp .env.example .env
 ```
 
-1. Edit `.env` and add your Firebase configuration:
+1. Edit `.env` and add your Supabase configuration:
 
 ```env
-VITE_FIREBASE_API_KEY=your_api_key_here
-VITE_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_project_id.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-VITE_FIREBASE_APP_ID=your_app_id
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_anon_key
 ```
 
-### Step 4: Deploy Firebase Rules and Indexes
+### Step 4: Create an Admin User
 
-```bash
-# Install Firebase CLI if not already installed
-npm install -g firebase-tools
-
-# Login to Firebase
-firebase login
-
-# Initialize Firebase (select your project)
-firebase init
-
-# When prompted, select:
-# - Firestore
-# - Storage
-# - Hosting
-# Use existing files (firestore.rules, storage.rules, etc.)
-
-# Deploy rules and indexes
-firebase deploy --only firestore:rules,firestore:indexes,storage:rules
-```
-
-### Step 5: Create an Admin User
-
-After deploying, you need to create an admin user manually:
+After deploying, you need to create an admin user:
 
 1. Run the app and create a regular user account
-2. Go to Firebase Console > Firestore Database
-3. Find the `users` collection
-4. Open your user document
-5. Add/edit a field: `role` with value `admin`
+2. Go to Supabase Dashboard > Table Editor > profiles
+3. Find your user record
+4. Edit the `role` field and set it to `admin`
 
 ### Step 6: Run the Development Server
 
@@ -192,19 +154,7 @@ The app will be available at `http://localhost:5173`
 
 ## 🚢 Deployment
 
-### Option 1: Firebase Hosting (Recommended)
-
-```bash
-# Build the app
-npm run build
-
-# Deploy to Firebase Hosting
-firebase deploy --only hosting
-```
-
-Your app will be live at: `https://your-project-id.web.app`
-
-### Option 2: Vercel
+### Option 1: Vercel (Recommended)
 
 ```bash
 # Install Vercel CLI
@@ -216,7 +166,7 @@ vercel --prod
 
 Or connect your GitHub repository to Vercel for automatic deployments.
 
-### Option 3: Netlify
+### Option 2: Netlify
 
 ```bash
 # Build the app
@@ -236,19 +186,15 @@ Or drag and drop the `dist` folder to [Netlify Drop](https://app.netlify.com/dro
 When deploying to hosting platforms, make sure to set these environment variables:
 
 ```
-VITE_FIREBASE_API_KEY
-VITE_FIREBASE_AUTH_DOMAIN
-VITE_FIREBASE_PROJECT_ID
-VITE_FIREBASE_STORAGE_BUCKET
-VITE_FIREBASE_MESSAGING_SENDER_ID
-VITE_FIREBASE_APP_ID
+VITE_SUPABASE_URL
+VITE_SUPABASE_ANON_KEY
 ```
 
 ## 🔒 Security
 
-### Firestore Security Rules
+### Row Level Security (RLS)
 
-The project includes comprehensive Firestore rules that:
+The project includes comprehensive RLS policies that:
 
 - Allow users to read/write their own data
 - Protect admin routes (only admins can manage products)
@@ -308,7 +254,7 @@ Storage rules ensure:
 Create test accounts for different scenarios:
 
 1. **Regular User**: Sign up normally
-2. **Admin User**: Create user, then manually set `role: admin` in Firestore
+2. **Admin User**: Create user, then manually set `role: admin` in Supabase
 3. **Google Auth**: Test Google sign-in flow
 
 ### Testing Checklist
@@ -327,22 +273,22 @@ Create test accounts for different scenarios:
 
 ### Common Issues
 
-**1. Firebase connection errors**
+**1. Supabase connection errors**
 
 - Check that `.env` file exists and contains correct values
-- Verify Firebase project is active in console
-- Ensure authentication methods are enabled
+- Verify Supabase project URL and anon key are correct
+- Ensure authentication methods are enabled in Supabase dashboard
 
 **2. Admin panel not accessible**
 
-- Verify user has `role: admin` in Firestore
-- Check Firestore rules are deployed
+- Verify user has `role: admin` in Supabase profiles table
+- Check RLS policies are active
 - Clear browser cache and re-login
 
 **3. Image upload fails**
 
-- Check Storage rules are deployed
-- Verify storage bucket is created
+- Check Storage bucket exists and is set to public
+- Verify storage policies are configured
 - Ensure user has admin role
 
 **4. Build errors**
@@ -361,7 +307,7 @@ Contributions are welcome! Feel free to submit issues and pull requests.
 
 ## 📞 Support
 
-For questions or issues, please open an issue on GitHub or contact <support@shophub.com>.
+For questions or issues, please open an issue on GitHub or contact shitunaelin@gmail.com.
 
 ## 🎉 Credits
 
@@ -370,7 +316,7 @@ Built with:
 - [React](https://react.dev/)
 - [TypeScript](https://www.typescriptlang.org/)
 - [Tailwind CSS](https://tailwindcss.com/)
-- [Firebase](https://firebase.google.com/)
+- [Supabase](https://supabase.com/)
 - [Vite](https://vitejs.dev/)
 
 ---

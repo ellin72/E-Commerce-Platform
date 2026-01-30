@@ -60,7 +60,7 @@ Unsure where to begin? You can start by looking through these issues:
 4. **Set up environment**:
    ```bash
    cp .env.example .env
-   # Fill in your Firebase credentials
+   # Fill in your Supabase credentials
    ```
 5. **Create a branch** for your changes:
    ```bash
@@ -166,7 +166,7 @@ We follow the [Conventional Commits](https://www.conventionalcommits.org/) speci
 ```
 feat(auth): add Google OAuth login
 
-Add Google sign-in functionality using Firebase Auth.
+Add Google sign-in functionality using Supabase Auth.
 Users can now sign in with their Google account.
 
 Closes #123
@@ -184,7 +184,7 @@ Fixes #456
 ```
 docs(readme): update installation instructions
 
-Added more detailed Firebase setup instructions.
+Added more detailed Supabase setup instructions.
 ```
 
 ## Project Structure
@@ -194,10 +194,10 @@ E-Commerce-Platform/
 ├── src/
 │   ├── components/     # Reusable React components
 │   ├── pages/          # Page components
-│   ├── services/       # Firebase service functions
+│   ├── services/       # Supabase service functions
 │   ├── contexts/       # React contexts
 │   ├── types/          # TypeScript types
-│   ├── config/         # Configuration files
+│   ├── lib/            # Supabase client
 │   └── hooks/          # Custom React hooks
 ├── public/             # Static assets
 └── .github/            # GitHub configurations
@@ -208,6 +208,7 @@ E-Commerce-Platform/
 Currently, the project doesn't have automated tests, but contributions to add testing are welcome!
 
 If you're adding tests:
+
 - Use **Jest** for unit tests
 - Use **React Testing Library** for component tests
 - Aim for good coverage on critical functionality
@@ -215,6 +216,7 @@ If you're adding tests:
 ## Questions?
 
 Feel free to:
+
 - Open an issue with the `question` label
 - Reach out to the maintainers
 - Check existing documentation
