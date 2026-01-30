@@ -15,6 +15,7 @@ export const signUpWithEmail = async (
     options: {
       data: {
         display_name: displayName,
+        role: 'user', // Store role in user metadata
       },
     },
   });

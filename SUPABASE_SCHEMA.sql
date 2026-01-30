@@ -109,15 +109,13 @@ CREATE POLICY "Users can update own profile"
     FOR UPDATE
     USING (auth.uid() = id);
 
--- Admins can read all profiles
+-- Admins can read all profiles (using auth metadata to avoid recursion)
 CREATE POLICY "Admins can read all profiles"
     ON public.profiles
     FOR SELECT
     USING (
-        EXISTS (
-            SELECT 1 FROM public.profiles
-            WHERE id = auth.uid() AND role = 'admin'
-        )
+        COALESCE((auth.jwt() -> 'user_metadata' -> 'role')::text = '"admin"', false) OR
+        auth.uid() = id
     );
 
 -- Service role can insert profiles (for auth trigger)
@@ -141,10 +139,7 @@ CREATE POLICY "Only admins can create products"
     ON public.products
     FOR INSERT
     WITH CHECK (
-        EXISTS (
-            SELECT 1 FROM public.profiles
-            WHERE id = auth.uid() AND role = 'admin'
-        )
+        COALESCE((auth.jwt() -> 'user_metadata' -> 'role')::text = '"admin"', false)
     );
 
 -- Only admins can update products
@@ -152,10 +147,7 @@ CREATE POLICY "Only admins can update products"
     ON public.products
     FOR UPDATE
     USING (
-        EXISTS (
-            SELECT 1 FROM public.profiles
-            WHERE id = auth.uid() AND role = 'admin'
-        )
+        COALESCE((auth.jwt() -> 'user_metadata' -> 'role')::text = '"admin"', false)
     );
 
 -- Only admins can delete products
@@ -163,10 +155,7 @@ CREATE POLICY "Only admins can delete products"
     ON public.products
     FOR DELETE
     USING (
-        EXISTS (
-            SELECT 1 FROM public.profiles
-            WHERE id = auth.uid() AND role = 'admin'
-        )
+        COALESCE((auth.jwt() -> 'user_metadata' -> 'role')::text = '"admin"', false)
     );
 
 -- ============================================================================
@@ -218,10 +207,8 @@ CREATE POLICY "Admins can read all orders"
     ON public.orders
     FOR SELECT
     USING (
-        EXISTS (
-            SELECT 1 FROM public.profiles
-            WHERE id = auth.uid() AND role = 'admin'
-        )
+        COALESCE((auth.jwt() -> 'user_metadata' -> 'role')::text = '"admin"', false) OR
+        auth.uid() = user_id
     );
 
 -- Admins can update order status
@@ -229,10 +216,7 @@ CREATE POLICY "Admins can update orders"
     ON public.orders
     FOR UPDATE
     USING (
-        EXISTS (
-            SELECT 1 FROM public.profiles
-            WHERE id = auth.uid() AND role = 'admin'
-        )
+        COALESCE((auth.jwt() -> 'user_metadata' -> 'role')::text = '"admin"', false)
     );
 
 -- ============================================================================
