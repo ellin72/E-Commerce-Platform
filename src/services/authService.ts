@@ -79,25 +79,18 @@ export const signUpWithEmail = async (
     throw new Error('Sign up failed: No user returned');
   }
 
-  console.log('Signup successful, fetching profile for:', data.user.id);
+  console.log('Signup successful:', data.user.id);
 
-  // Fetch the newly created profile (with retries for trigger delay)
-  const userProfile = await getUserData(data.user.id, 5, 500);
-  if (!userProfile) {
-    // If profile still doesn't exist after retries, create a default one from auth data
-    console.warn('Profile not created by trigger, creating default profile');
-    return {
-      uid: data.user.id,
-      email: data.user.email || email,
-      displayName: displayName,
-      photoURL: null,
-      role: 'user',
-      createdAt: new Date(),
-    };
-  }
-
-  console.log('Profile fetched successfully:', userProfile);
-  return userProfile;
+  // Return user immediately - profile will be synced by AuthContext
+  // The database trigger will create the profile in the background
+  return {
+    uid: data.user.id,
+    email: data.user.email || email,
+    displayName: displayName,
+    photoURL: null,
+    role: 'user',
+    createdAt: new Date(),
+  };
 };
 
 /**
@@ -134,25 +127,17 @@ export const signInWithEmail = async (email: string, password: string): Promise<
     throw new Error('Sign in failed: No user returned');
   }
 
-  console.log('Login successful, fetching profile for:', data.user.id);
+  console.log('Login successful:', data.user.id);
 
-  // Fetch user profile (with retries for potential timing issues)
-  const userProfile = await getUserData(data.user.id, 5, 500);
-  if (!userProfile) {
-    // If profile doesn't exist, create a default one from auth data
-    console.warn('Profile not found, creating default profile from auth data');
-    return {
-      uid: data.user.id,
-      email: data.user.email || email,
-      displayName: data.user.user_metadata?.display_name || email.split('@')[0],
-      photoURL: data.user.user_metadata?.photo_url || null,
-      role: (data.user.user_metadata?.role as 'user' | 'admin') || 'user',
-      createdAt: new Date(data.user.created_at || new Date()),
-    };
-  }
-
-  console.log('Profile fetched successfully:', userProfile);
-  return userProfile;
+  // Return user immediately - profile will be synced by AuthContext
+  return {
+    uid: data.user.id,
+    email: data.user.email || email,
+    displayName: data.user.user_metadata?.display_name || email.split('@')[0],
+    photoURL: data.user.user_metadata?.photo_url || null,
+    role: (data.user.user_metadata?.role as 'user' | 'admin') || 'user',
+    createdAt: new Date(data.user.created_at || new Date()),
+  };
 };
 
 export const signInWithGoogle = async (): Promise<void> => {
@@ -165,6 +150,20 @@ export const signInWithGoogle = async (): Promise<void> => {
   }
 
   // OAuth redirects to provider, user data will be available after redirect
+};
+
+/**
+ * Resend email confirmation
+ */
+export const resendConfirmationEmail = async (email: string): Promise<void> => {
+  const { error } = await supabase.auth.resend({
+    type: 'signup',
+    email: email,
+  });
+
+  if (error) {
+    throw new Error(`Failed to resend confirmation email: ${error.message}`);
+  }
 };
 
 /**

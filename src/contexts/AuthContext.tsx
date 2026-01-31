@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { onAuthStateChanged } from '../services/authService';
+import { supabase } from '../lib/supabaseClient';
 import { User } from '../types';
 
 interface AuthContextType {
@@ -28,14 +28,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Subscribe to auth state changes
-    const unsubscribe = onAuthStateChanged(async (user) => {
-      setCurrentUser(user);
-      setUserData(user);
+    // Listen to auth state changes
+    const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session?.user?.id);
+
+      if (session?.user) {
+        // User is logged in
+        const user: User = {
+          uid: session.user.id,
+          email: session.user.email || '',
+          displayName:
+            session.user.user_metadata?.display_name || session.user.email?.split('@')[0] || 'User',
+          photoURL: session.user.user_metadata?.photo_url || null,
+          role: (session.user.user_metadata?.role as 'user' | 'admin') || 'user',
+          createdAt: new Date(session.user.created_at || new Date()),
+        };
+
+        setCurrentUser(user);
+        setUserData(user);
+        console.log('User logged in:', user.uid);
+      } else {
+        // User is logged out
+        setCurrentUser(null);
+        setUserData(null);
+        console.log('User logged out');
+      }
+
       setLoading(false);
     });
 
-    return unsubscribe;
+    return () => {
+      data.subscription.unsubscribe();
+    };
   }, []);
 
   const value = {
