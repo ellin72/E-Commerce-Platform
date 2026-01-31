@@ -67,7 +67,9 @@ export const Login: React.FC = () => {
       setSuccess('');
       setResendingEmail(true);
       await resendConfirmationEmail(email);
-      setSuccess('Confirmation email sent! Please check your inbox (including spam folder).');
+      setSuccess(
+        "Confirmation email request sent! Please check your inbox and spam folder. Note: If you don't receive an email, check your browser console (F12) for diagnostic information or contact the administrator to verify Supabase email settings."
+      );
       setShowResendConfirmation(false);
       setResendCooldown(60); // 60 second cooldown
     } catch (err: any) {

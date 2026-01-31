@@ -31,7 +31,7 @@ export const SignUp: React.FC = () => {
 
       // Show success message instead of navigating
       setSuccess(
-        'Account created! Please check your email to confirm your account before logging in.'
+        "Account created successfully! If email confirmation is enabled, please check your email (including spam folder) to verify your account before logging in. If you don't receive an email within a few minutes, you can try logging in directly - email confirmation may be disabled."
       );
       // Clear form
       setEmail('');

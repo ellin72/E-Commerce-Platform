@@ -80,6 +80,8 @@ export const signUpWithEmail = async (
   }
 
   console.log('Signup successful:', data.user.id);
+  console.log('Email confirmation required:', data.user.email_confirmed_at === null);
+  console.log('User session:', data.session ? 'Active' : 'None (email confirmation required)');
 
   // Return user immediately - profile will be synced by AuthContext
   // The database trigger will create the profile in the background
@@ -156,14 +158,24 @@ export const signInWithGoogle = async (): Promise<void> => {
  * Resend email confirmation
  */
 export const resendConfirmationEmail = async (email: string): Promise<void> => {
-  const { error } = await supabase.auth.resend({
+  console.log('Attempting to resend confirmation email to:', email);
+
+  const { data, error } = await supabase.auth.resend({
     type: 'signup',
     email: email,
   });
 
   if (error) {
+    console.error('Resend confirmation error:', error);
     throw new Error(`Failed to resend confirmation email: ${error.message}`);
   }
+
+  console.log('Resend confirmation response:', data);
+  console.log("⚠️ Email sent by Supabase. If you don't receive it, check:");
+  console.log('  1. Spam/Junk folder');
+  console.log('  2. Supabase Dashboard > Authentication > Settings > Email confirmations enabled');
+  console.log('  3. Supabase Dashboard > Project Settings > Auth > SMTP settings configured');
+  console.log('  4. Authentication > Email Templates > Confirm signup template exists');
 };
 
 /**
