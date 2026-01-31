@@ -3,6 +3,27 @@
 -- PostgreSQL Syntax - Execute in Supabase SQL Editor, not in IDE validators
 
 -- ============================================================================
+-- DROP EXISTING OBJECTS (Clean Slate)
+-- ============================================================================
+
+-- Drop triggers first
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+DROP TRIGGER IF EXISTS update_profiles_updated_at ON public.profiles;
+DROP TRIGGER IF EXISTS update_products_updated_at ON public.products;
+DROP TRIGGER IF EXISTS update_cart_items_updated_at ON public.cart_items;
+DROP TRIGGER IF EXISTS update_orders_updated_at ON public.orders;
+
+-- Drop functions
+DROP FUNCTION IF EXISTS public.handle_new_user();
+DROP FUNCTION IF EXISTS public.update_updated_at_column();
+
+-- Drop tables (in reverse order of dependencies)
+DROP TABLE IF EXISTS public.orders CASCADE;
+DROP TABLE IF EXISTS public.cart_items CASCADE;
+DROP TABLE IF EXISTS public.products CASCADE;
+DROP TABLE IF EXISTS public.profiles CASCADE;
+
+-- ============================================================================
 -- ENABLE EXTENSIONS
 -- ============================================================================
 
@@ -226,8 +247,13 @@ CREATE POLICY "Admins can update orders"
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
-    INSERT INTO public.profiles (id, email, display_name)
-    VALUES (new.id, new.email, new.raw_user_meta_data->>'display_name');
+    INSERT INTO public.profiles (id, email, display_name, role)
+    VALUES (
+        new.id,
+        new.email,
+        new.raw_user_meta_data->>'display_name',
+        COALESCE(new.raw_user_meta_data->>'role', 'user')
+    );
     RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
