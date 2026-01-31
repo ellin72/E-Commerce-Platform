@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { getUserData } from '../services/authService';
 import { User } from '../types';
 
 interface AuthContextType {
@@ -29,23 +30,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     // Listen to auth state changes
-    const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
-        // User is logged in
-        const user: User = {
-          uid: session.user.id,
-          email: session.user.email || '',
-          displayName:
-            session.user.user_metadata?.display_name || session.user.email?.split('@')[0] || 'User',
-          photoURL: session.user.user_metadata?.photo_url || null,
-          role: (session.user.user_metadata?.role as 'user' | 'admin') || 'user',
-          createdAt: new Date(session.user.created_at || new Date()),
-        };
+        const profile = await getUserData(session.user.id);
 
-        setCurrentUser(user);
-        setUserData(user);
+        if (profile) {
+          setCurrentUser(profile);
+          setUserData(profile);
+        } else {
+          const fallbackUser: User = {
+            uid: session.user.id,
+            email: session.user.email || '',
+            displayName:
+              session.user.user_metadata?.display_name ||
+              session.user.email?.split('@')[0] ||
+              'User',
+            photoURL: session.user.user_metadata?.photo_url || null,
+            role: 'user',
+            createdAt: new Date(session.user.created_at || new Date()),
+          };
+          setCurrentUser(fallbackUser);
+          setUserData(fallbackUser);
+        }
       } else {
-        // User is logged out
         setCurrentUser(null);
         setUserData(null);
       }

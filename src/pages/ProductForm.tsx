@@ -18,6 +18,7 @@ export const ProductForm: React.FC = () => {
   const [currentImageUrl, setCurrentImageUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingProduct, setLoadingProduct] = useState(isEditMode);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     if (isEditMode && id) {
@@ -48,6 +49,7 @@ export const ProductForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage('');
 
     try {
       setLoading(true);
@@ -65,7 +67,13 @@ export const ProductForm: React.FC = () => {
         alert('Product updated successfully');
       } else {
         if (!image) {
-          alert('Please select an image');
+          setErrorMessage('Please select an image');
+          return;
+        }
+        const maxImageSizeBytes = 5 * 1024 * 1024;
+        if (image.size > maxImageSizeBytes) {
+          const sizeMb = (image.size / (1024 * 1024)).toFixed(2);
+          setErrorMessage(`Image is too large (${sizeMb} MB). Please use an image under 5 MB.`);
           return;
         }
         await createProduct({
@@ -81,7 +89,8 @@ export const ProductForm: React.FC = () => {
 
       navigate('/admin');
     } catch (error) {
-      alert('Failed to save product');
+      const message = error instanceof Error ? error.message : 'Failed to save product';
+      setErrorMessage(message);
     } finally {
       setLoading(false);
     }
@@ -100,6 +109,12 @@ export const ProductForm: React.FC = () => {
       <h1 className="text-3xl font-bold text-gray-900 mb-8">
         {isEditMode ? 'Edit Product' : 'Add New Product'}
       </h1>
+
+      {errorMessage && (
+        <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {errorMessage}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-6">
         <div>

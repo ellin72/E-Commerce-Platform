@@ -57,6 +57,27 @@ export const Navbar: React.FC = () => {
             <div className="flex items-center space-x-4">
               {currentUser ? (
                 <>
+                  {userData?.role === 'admin' && (
+                    <Link
+                      to="/admin/products/new"
+                      className="hidden sm:inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+                    >
+                      <svg
+                        className="w-4 h-4 mr-1.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 4v16m8-8H4"
+                        />
+                      </svg>
+                      Add Product
+                    </Link>
+                  )}
                   <button
                     onClick={() => setCartOpen(true)}
                     className="p-2 text-gray-600 hover:text-primary-600 relative"
@@ -149,13 +170,22 @@ export const Navbar: React.FC = () => {
                 </Link>
               )}
               {userData?.role === 'admin' && (
-                <Link
-                  to="/admin"
-                  className="block pl-3 pr-4 py-2 text-base font-medium text-gray-700 hover:bg-gray-50"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Admin
-                </Link>
+                <>
+                  <Link
+                    to="/admin"
+                    className="block pl-3 pr-4 py-2 text-base font-medium text-gray-700 hover:bg-gray-50"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Admin
+                  </Link>
+                  <Link
+                    to="/admin/products/new"
+                    className="block pl-3 pr-4 py-2 text-base font-medium text-primary-600 hover:bg-gray-50"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    + Add Product
+                  </Link>
+                </>
               )}
               {currentUser ? (
                 <>

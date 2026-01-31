@@ -191,6 +191,43 @@ CREATE POLICY "Only admins can delete products"
     );
 
 -- ============================================================================
+-- STORAGE POLICIES (product-images bucket)
+-- ============================================================================
+
+-- Public read access for product images
+CREATE POLICY "Public can read product images"
+    ON storage.objects
+    FOR SELECT
+    USING (bucket_id = 'product-images');
+
+-- Only admins can upload product images
+CREATE POLICY "Admins can upload product images"
+    ON storage.objects
+    FOR INSERT
+    WITH CHECK (
+        bucket_id = 'product-images' AND
+        is_admin(auth.uid())
+    );
+
+-- Only admins can update product images
+CREATE POLICY "Admins can update product images"
+    ON storage.objects
+    FOR UPDATE
+    USING (
+        bucket_id = 'product-images' AND
+        is_admin(auth.uid())
+    );
+
+-- Only admins can delete product images
+CREATE POLICY "Admins can delete product images"
+    ON storage.objects
+    FOR DELETE
+    USING (
+        bucket_id = 'product-images' AND
+        is_admin(auth.uid())
+    );
+
+-- ============================================================================
 -- CART_ITEMS POLICIES
 -- ============================================================================
 

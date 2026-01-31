@@ -6,6 +6,24 @@ type ProductRow = Database['public']['Tables']['products']['Row'];
 
 const PRODUCT_BUCKET = 'product-images';
 
+const withTimeout = async <T>(promise: Promise<T>, ms: number, label: string): Promise<T> => {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  const timeoutPromise = new Promise<T>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error(`${label} timed out. Please try again.`));
+    }, ms);
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  }
+};
+
 /**
  * Create a new product with image upload
  */
@@ -15,23 +33,31 @@ export const createProduct = async (productData: CreateProductDto): Promise<stri
   // Upload image if provided
   if (productData.image) {
     const fileName = `${Date.now()}_${productData.image.name}`;
-    imageUrl = await uploadFile(PRODUCT_BUCKET, fileName, productData.image);
+    imageUrl = await withTimeout(
+      uploadFile(PRODUCT_BUCKET, fileName, productData.image),
+      60000,
+      'Image upload'
+    );
   }
 
-  const { data, error } = await supabase
-    .from('products')
-    .insert([
-      {
-        name: productData.name,
-        description: productData.description,
-        price: productData.price,
-        category: productData.category,
-        stock: productData.stock,
-        image_url: imageUrl,
-      },
-    ])
-    .select('id')
-    .single();
+  const { data, error } = await withTimeout(
+    supabase
+      .from('products')
+      .insert([
+        {
+          name: productData.name,
+          description: productData.description,
+          price: productData.price,
+          category: productData.category,
+          stock: productData.stock,
+          image_url: imageUrl,
+        },
+      ])
+      .select('id')
+      .single(),
+    20000,
+    'Product save'
+  );
 
   if (error) {
     // Delete uploaded image if insert fails
@@ -62,7 +88,11 @@ export const updateProduct = async (productData: UpdateProductDto): Promise<void
   // Upload new image if provided
   if (image) {
     const fileName = `${Date.now()}_${image.name}`;
-    imageUrl = await uploadFile(PRODUCT_BUCKET, fileName, image);
+    imageUrl = await withTimeout(
+      uploadFile(PRODUCT_BUCKET, fileName, image),
+      60000,
+      'Image upload'
+    );
   }
 
   const { error } = await supabase
