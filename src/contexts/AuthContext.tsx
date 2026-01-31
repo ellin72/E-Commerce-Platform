@@ -30,28 +30,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     // Listen to auth state changes
-    const { data } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        const profile = await getUserData(session.user.id);
+        const fallbackUser: User = {
+          uid: session.user.id,
+          email: session.user.email || '',
+          displayName:
+            session.user.user_metadata?.display_name || session.user.email?.split('@')[0] || 'User',
+          photoURL: session.user.user_metadata?.photo_url || null,
+          role: 'user',
+          createdAt: new Date(session.user.created_at || new Date()),
+        };
+        setCurrentUser(fallbackUser);
+        setUserData(fallbackUser);
 
-        if (profile) {
-          setCurrentUser(profile);
-          setUserData(profile);
-        } else {
-          const fallbackUser: User = {
-            uid: session.user.id,
-            email: session.user.email || '',
-            displayName:
-              session.user.user_metadata?.display_name ||
-              session.user.email?.split('@')[0] ||
-              'User',
-            photoURL: session.user.user_metadata?.photo_url || null,
-            role: 'user',
-            createdAt: new Date(session.user.created_at || new Date()),
-          };
-          setCurrentUser(fallbackUser);
-          setUserData(fallbackUser);
-        }
+        // Fetch profile asynchronously without blocking login
+        getUserData(session.user.id, 1)
+          .then((profile) => {
+            if (profile) {
+              setUserData(profile);
+            }
+          })
+          .catch(() => {
+            // If profile fetch fails, keep using fallback user
+          });
       } else {
         setCurrentUser(null);
         setUserData(null);

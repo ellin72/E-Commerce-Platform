@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabaseClient';
+import { supabase, supabaseAnonKey, supabaseUrl } from '../lib/supabaseClient';
 import { User } from '../types';
 import type { Database } from '../types/database.types';
 
@@ -33,6 +33,60 @@ const retryWithBackoff = async <T>(
   }
 
   throw lastError;
+};
+
+const withTimeout = async <T>(promise: Promise<T>, ms: number, label: string): Promise<T> => {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  const timeoutPromise = new Promise<T>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error(`${label} timed out. Please try again.`));
+    }, ms);
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  }
+};
+
+const checkAuthHealth = async (): Promise<void> => {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error(
+      'Supabase configuration missing. Check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.'
+    );
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+  try {
+    const response = await fetch(`${supabaseUrl}/auth/v1/health`, {
+      method: 'GET',
+      headers: {
+        apikey: supabaseAnonKey,
+      },
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error('Supabase auth service is unavailable. Please try again.');
+    }
+  } catch (error: any) {
+    if (error?.name === 'AbortError') {
+      throw new Error(
+        'Supabase auth service is unreachable. Check your network or project status.'
+      );
+    }
+    throw new Error(
+      'Supabase auth service is unreachable. Check your URL, anon key, and project status.'
+    );
+  } finally {
+    clearTimeout(timeoutId);
+  }
 };
 
 /**
@@ -92,6 +146,7 @@ export const signUpWithEmail = async (
 export const signInWithEmail = async (email: string, password: string): Promise<User> => {
   let data, error;
   try {
+    await checkAuthHealth();
     const result = await retryWithBackoff(
       () =>
         supabase.auth.signInWithPassword({
