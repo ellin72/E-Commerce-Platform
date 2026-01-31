@@ -27,7 +27,11 @@ interface AuthProviderProps {
 }
 
 // Moved outside to allow both component and type exports for fast refresh
-async function getUserDataAsync(userId: string, retries: number = 3, delay: number = 1000): Promise<User | null> {
+async function getUserDataAsync(
+  userId: string,
+  retries: number = 3,
+  delay: number = 1000
+): Promise<User | null> {
   const { getUserData } = await import('../services/authService');
   return getUserData(userId, retries, delay);
 }

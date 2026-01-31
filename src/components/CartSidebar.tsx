@@ -19,12 +19,6 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose }) => 
   const { currentUser } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (isOpen && currentUser) {
-      loadCart();
-    }
-  }, [isOpen, currentUser, loadCart]);
-
   const loadCart = useCallback(async () => {
     if (!currentUser) return;
 
@@ -38,6 +32,12 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose }) => 
       setLoading(false);
     }
   }, [currentUser]);
+
+  useEffect(() => {
+    if (isOpen && currentUser) {
+      loadCart();
+    }
+  }, [isOpen, currentUser, loadCart]);
 
   const handleUpdateQuantity = async (productId: string, quantity: number) => {
     if (!currentUser) return;
