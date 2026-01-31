@@ -14,7 +14,9 @@ export const Navbar: React.FC = () => {
     try {
       await signOut();
       navigate('/login');
-    } catch (error) {}
+    } catch {
+      // Handle error silently
+    }
   };
 
   return (

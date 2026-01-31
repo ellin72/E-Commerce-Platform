@@ -44,8 +44,8 @@ export const AdminSetup: React.FC = () => {
       }
 
       setEmail('');
-    } catch (err: any) {
-      setError(err.message || 'An error occurred');
+    } catch (err: Error | unknown) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }

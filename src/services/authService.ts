@@ -17,8 +17,8 @@ const retryWithBackoff = async <T>(
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       return await fn();
-    } catch (error: any) {
-      lastError = error;
+    } catch (error: Error | unknown) {
+      lastError = error as Error;
 
       // Only retry on 429 (Too Many Requests) errors
       if (error.status !== 429) {
@@ -33,24 +33,6 @@ const retryWithBackoff = async <T>(
   }
 
   throw lastError;
-};
-
-const withTimeout = async <T>(promise: Promise<T>, ms: number, label: string): Promise<T> => {
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
-
-  const timeoutPromise = new Promise<T>((_, reject) => {
-    timeoutId = setTimeout(() => {
-      reject(new Error(`${label} timed out. Please try again.`));
-    }, ms);
-  });
-
-  try {
-    return await Promise.race([promise, timeoutPromise]);
-  } finally {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-  }
 };
 
 const checkAuthHealth = async (): Promise<void> => {
@@ -116,8 +98,8 @@ export const signUpWithEmail = async (
     );
     data = result.data;
     error = result.error;
-  } catch (err: any) {
-    throw new Error(`Sign up failed: ${err.message || 'Network error'}`);
+  } catch (err: Error | unknown) {
+    throw new Error(`Sign up failed: ${err instanceof Error ? err.message : 'Network error'}`);
   }
 
   if (error) {
@@ -146,7 +128,6 @@ export const signUpWithEmail = async (
 export const signInWithEmail = async (email: string, password: string): Promise<User> => {
   let data, error;
   try {
-    await checkAuthHealth();
     const result = await retryWithBackoff(
       () =>
         supabase.auth.signInWithPassword({
@@ -234,7 +215,7 @@ export const getUserData = async (
       const result = await supabase.from('profiles').select('*').eq('id', userId).single();
       data = result.data;
       error = result.error;
-    } catch (err: any) {
+    } catch (err: Error | unknown) {
       if (attempt < retries - 1) {
         await new Promise((resolve) => setTimeout(resolve, delay));
         continue;
@@ -343,10 +324,11 @@ export const getUserRole = async (email: string): Promise<'user' | 'admin' | nul
  * Listen to auth state changes
  */
 export const onAuthStateChanged = (callback: (user: User | null) => void) => {
-  const { data } = supabase.auth.onAuthStateChange(async (_event, session) => {
+  const { data } = supabase.auth.onAuthStateChange((_event, session) => {
     if (session?.user) {
-      const userProfile = await getUserData(session.user.id);
-      callback(userProfile);
+      getUserData(session.user.id, 3)
+        .then((userProfile) => callback(userProfile || null))
+        .catch(() => callback(null));
     } else {
       callback(null);
     }

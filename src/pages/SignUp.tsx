@@ -38,8 +38,8 @@ export const SignUp: React.FC = () => {
       setPassword('');
       setConfirmPassword('');
       setDisplayName('');
-    } catch (err: any) {
-      setError(err.message || 'Failed to create an account');
+    } catch (err: Error | unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to create an account');
     } finally {
       setLoading(false);
     }
@@ -51,8 +51,8 @@ export const SignUp: React.FC = () => {
       setLoading(true);
       await signInWithGoogle();
       navigate('/');
-    } catch (err: any) {
-      setError(err.message || 'Failed to sign up with Google');
+    } catch (err: Error | unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to log in with Google');
     } finally {
       setLoading(false);
     }

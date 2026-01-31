@@ -88,8 +88,8 @@ export const ProductForm: React.FC = () => {
       }
 
       navigate('/admin');
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to save product';
+    } catch (err: Error | unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to save product';
       setErrorMessage(message);
     } finally {
       setLoading(false);

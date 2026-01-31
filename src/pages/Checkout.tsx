@@ -21,8 +21,10 @@ export const Checkout: React.FC = () => {
   });
 
   useEffect(() => {
-    loadCart();
-  }, []);
+    if (currentUser) {
+      loadCart();
+    }
+  }, [currentUser]);
 
   const loadCart = async () => {
     if (!currentUser) return;
@@ -31,7 +33,8 @@ export const Checkout: React.FC = () => {
       setLoading(true);
       const cartData = await getCartWithProducts(currentUser.uid);
       setCart(cartData);
-    } catch (error) {
+    } catch {
+      // Handle error silently
     } finally {
       setLoading(false);
     }
@@ -57,7 +60,7 @@ export const Checkout: React.FC = () => {
       await createOrder(currentUser.uid, cart, shippingInfo);
       alert('Order placed successfully!');
       navigate(`/orders`);
-    } catch (error) {
+    } catch {
       alert('Failed to place order');
     } finally {
       setSubmitting(false);

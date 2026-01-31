@@ -17,7 +17,8 @@ export const AdminDashboard: React.FC = () => {
       setLoading(true);
       const allProducts = await getAllProducts();
       setProducts(allProducts);
-    } catch (error) {
+    } catch {
+      // Handle error silently
     } finally {
       setLoading(false);
     }
@@ -31,7 +32,7 @@ export const AdminDashboard: React.FC = () => {
       await deleteProduct(productId);
       await loadProducts();
       alert('Product deleted successfully');
-    } catch (error) {
+    } catch {
       alert('Failed to delete product');
     } finally {
       setDeleting(null);

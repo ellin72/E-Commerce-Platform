@@ -30,7 +30,8 @@ export const ProductList: React.FC = () => {
       }
 
       setProducts(loadedProducts);
-    } catch (error) {
+    } catch {
+      // Handle error silently
     } finally {
       setLoading(false);
     }
@@ -42,7 +43,8 @@ export const ProductList: React.FC = () => {
       try {
         const results = await searchProducts(searchTerm);
         setProducts(results);
-      } catch (error) {
+      } catch {
+        // Handle error silently
       } finally {
         setLoading(false);
       }

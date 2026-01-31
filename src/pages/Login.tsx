@@ -35,8 +35,8 @@ export const Login: React.FC = () => {
       setLoading(true);
       await signInWithEmail(email, password);
       navigate('/');
-    } catch (err: any) {
-      const errorMessage = err.message || 'Failed to log in';
+    } catch (err: Error | unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to log in';
 
       // Check if error is about email confirmation
       if (errorMessage.includes('Email not confirmed') || errorMessage.includes('not confirmed')) {
@@ -72,8 +72,9 @@ export const Login: React.FC = () => {
       );
       setShowResendConfirmation(false);
       setResendCooldown(60); // 60 second cooldown
-    } catch (err: any) {
-      const errorMessage = err.message || 'Failed to resend confirmation email';
+    } catch (err: Error | unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to resend confirmation email';
 
       // Better handling for rate limit errors
       if (errorMessage.includes('rate limit') || errorMessage.includes('Rate limit')) {
@@ -96,8 +97,8 @@ export const Login: React.FC = () => {
       setLoading(true);
       await signInWithGoogle();
       navigate('/');
-    } catch (err: any) {
-      setError(err.message || 'Failed to log in with Google');
+    } catch (err: Error | unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to log in with Google');
     } finally {
       setLoading(false);
     }

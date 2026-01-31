@@ -9,8 +9,10 @@ export const Orders: React.FC = () => {
   const { currentUser } = useAuth();
 
   useEffect(() => {
-    loadOrders();
-  }, []);
+    if (currentUser) {
+      loadOrders();
+    }
+  }, [currentUser]);
 
   const loadOrders = async () => {
     if (!currentUser) return;
@@ -19,7 +21,8 @@ export const Orders: React.FC = () => {
       setLoading(true);
       const userOrders = await getUserOrders(currentUser.uid);
       setOrders(userOrders);
-    } catch (error) {
+    } catch {
+      // Handle error silently
     } finally {
       setLoading(false);
     }
