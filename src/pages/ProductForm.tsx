@@ -40,7 +40,7 @@ export const ProductForm: React.FC = () => {
         });
         setCurrentImageUrl(product.imageUrl);
       }
-    } catch (error) {
+    } catch {
       alert('Failed to load product');
     } finally {
       setLoadingProduct(false);

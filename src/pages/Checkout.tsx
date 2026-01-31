@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getCartWithProducts } from '../services/cartService';
@@ -24,9 +24,9 @@ export const Checkout: React.FC = () => {
     if (currentUser) {
       loadCart();
     }
-  }, [currentUser]);
+  }, [currentUser, loadCart]);
 
-  const loadCart = async () => {
+  const loadCart = useCallback(async () => {
     if (!currentUser) return;
 
     try {
@@ -38,7 +38,7 @@ export const Checkout: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser]);
 
   const calculateTotal = () => {
     if (!cart) return 0;

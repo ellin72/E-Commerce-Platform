@@ -35,42 +35,6 @@ const retryWithBackoff = async <T>(
   throw lastError;
 };
 
-const checkAuthHealth = async (): Promise<void> => {
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error(
-      'Supabase configuration missing. Check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.'
-    );
-  }
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-  try {
-    const response = await fetch(`${supabaseUrl}/auth/v1/health`, {
-      method: 'GET',
-      headers: {
-        apikey: supabaseAnonKey,
-      },
-      signal: controller.signal,
-    });
-
-    if (!response.ok) {
-      throw new Error('Supabase auth service is unavailable. Please try again.');
-    }
-  } catch (error: any) {
-    if (error?.name === 'AbortError') {
-      throw new Error(
-        'Supabase auth service is unreachable. Check your network or project status.'
-      );
-    }
-    throw new Error(
-      'Supabase auth service is unreachable. Check your URL, anon key, and project status.'
-    );
-  } finally {
-    clearTimeout(timeoutId);
-  }
-};
-
 /**
  * Sign up with email and password
  */

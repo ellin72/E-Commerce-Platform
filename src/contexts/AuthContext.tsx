@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { getUserData } from '../services/authService';
 import { User } from '../types';
 
 interface AuthContextType {
@@ -27,6 +26,12 @@ interface AuthProviderProps {
   children: React.ReactNode;
 }
 
+// Moved outside to allow both component and type exports for fast refresh
+async function getUserDataAsync(userId: string, retries: number = 3, delay: number = 1000): Promise<User | null> {
+  const { getUserData } = await import('../services/authService');
+  return getUserData(userId, retries, delay);
+}
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<User | null>(null);
@@ -49,7 +54,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUserData(fallbackUser);
 
         // Fetch profile asynchronously without blocking login
-        getUserData(session.user.id, 1)
+        getUserDataAsync(session.user.id, 1)
           .then((profile) => {
             if (profile) {
               setUserData(profile);

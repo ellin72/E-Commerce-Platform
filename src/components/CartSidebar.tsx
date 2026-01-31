@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   getCartWithProducts,
@@ -23,9 +23,9 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose }) => 
     if (isOpen && currentUser) {
       loadCart();
     }
-  }, [isOpen, currentUser]);
+  }, [isOpen, currentUser, loadCart]);
 
-  const loadCart = async () => {
+  const loadCart = useCallback(async () => {
     if (!currentUser) return;
 
     try {
@@ -37,7 +37,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose }) => 
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser]);
 
   const handleUpdateQuantity = async (productId: string, quantity: number) => {
     if (!currentUser) return;

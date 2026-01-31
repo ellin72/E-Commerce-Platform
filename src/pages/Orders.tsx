@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getUserOrders } from '../services/orderService';
 import { Order } from '../types';
@@ -12,9 +12,9 @@ export const Orders: React.FC = () => {
     if (currentUser) {
       loadOrders();
     }
-  }, [currentUser]);
+  }, [currentUser, loadOrders]);
 
-  const loadOrders = async () => {
+  const loadOrders = useCallback(async () => {
     if (!currentUser) return;
 
     try {
@@ -26,7 +26,7 @@ export const Orders: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser]);
 
   const getStatusColor = (status: Order['status']) => {
     const colors = {

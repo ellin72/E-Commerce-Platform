@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { getAllProducts, searchProducts, getProductsByCategory } from '../services/productService';
 import { addToCart } from '../services/cartService';
 import { Product } from '../types';
@@ -16,9 +16,9 @@ export const ProductList: React.FC = () => {
 
   useEffect(() => {
     loadProducts();
-  }, [selectedCategory]);
+  }, [loadProducts]);
 
-  const loadProducts = async () => {
+  const loadProducts = useCallback(async () => {
     try {
       setLoading(true);
       let loadedProducts: Product[];
@@ -35,7 +35,7 @@ export const ProductList: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedCategory]);
 
   const handleSearch = async () => {
     if (searchTerm.trim()) {
@@ -63,7 +63,7 @@ export const ProductList: React.FC = () => {
       setAddingToCart(productId);
       await addToCart(currentUser.uid, productId, 1);
       alert('Product added to cart!');
-    } catch (error) {
+    } catch {
       alert('Failed to add product to cart');
     } finally {
       setAddingToCart(null);
