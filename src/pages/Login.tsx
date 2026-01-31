@@ -72,10 +72,12 @@ export const Login: React.FC = () => {
       setResendCooldown(60); // 60 second cooldown
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to resend confirmation email';
-      
+
       // Better handling for rate limit errors
       if (errorMessage.includes('rate limit') || errorMessage.includes('Rate limit')) {
-        setError('Too many email requests. Please wait a few minutes before trying again. If this persists, you may need to wait up to an hour due to Supabase rate limits.');
+        setError(
+          'Too many email requests. Please wait a few minutes before trying again. If this persists, you may need to wait up to an hour due to Supabase rate limits.'
+        );
         setResendCooldown(120); // 2 minute cooldown for rate limit
         setShowResendConfirmation(false); // Hide button during cooldown
       } else {
@@ -138,8 +140,8 @@ export const Login: React.FC = () => {
                 {resendingEmail
                   ? 'Sending...'
                   : resendCooldown > 0
-                  ? `Wait ${resendCooldown}s`
-                  : 'Resend Confirmation Email'}
+                    ? `Wait ${resendCooldown}s`
+                    : 'Resend Confirmation Email'}
               </button>
             </div>
           )}
