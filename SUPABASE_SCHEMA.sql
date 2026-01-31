@@ -130,12 +130,12 @@ CREATE POLICY "Users can update own profile"
     FOR UPDATE
     USING (auth.uid() = id);
 
--- Admins can read all profiles (using auth metadata to avoid recursion)
+-- Admins can read all profiles (checking role in profiles table)
 CREATE POLICY "Admins can read all profiles"
     ON public.profiles
     FOR SELECT
     USING (
-        COALESCE((auth.jwt() -> 'user_metadata' -> 'role')::text = '"admin"', false) OR
+        (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin' OR
         auth.uid() = id
     );
 
@@ -160,7 +160,7 @@ CREATE POLICY "Only admins can create products"
     ON public.products
     FOR INSERT
     WITH CHECK (
-        COALESCE((auth.jwt() -> 'user_metadata' -> 'role')::text = '"admin"', false)
+        (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin'
     );
 
 -- Only admins can update products
@@ -168,7 +168,7 @@ CREATE POLICY "Only admins can update products"
     ON public.products
     FOR UPDATE
     USING (
-        COALESCE((auth.jwt() -> 'user_metadata' -> 'role')::text = '"admin"', false)
+        (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin'
     );
 
 -- Only admins can delete products
@@ -176,7 +176,7 @@ CREATE POLICY "Only admins can delete products"
     ON public.products
     FOR DELETE
     USING (
-        COALESCE((auth.jwt() -> 'user_metadata' -> 'role')::text = '"admin"', false)
+        (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin'
     );
 
 -- ============================================================================
@@ -228,7 +228,7 @@ CREATE POLICY "Admins can read all orders"
     ON public.orders
     FOR SELECT
     USING (
-        COALESCE((auth.jwt() -> 'user_metadata' -> 'role')::text = '"admin"', false) OR
+        (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin' OR
         auth.uid() = user_id
     );
 
@@ -237,7 +237,7 @@ CREATE POLICY "Admins can update orders"
     ON public.orders
     FOR UPDATE
     USING (
-        COALESCE((auth.jwt() -> 'user_metadata' -> 'role')::text = '"admin"', false)
+        (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin'
     );
 
 -- ============================================================================
