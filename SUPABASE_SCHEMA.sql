@@ -105,6 +105,17 @@ CREATE INDEX idx_orders_status ON public.orders(status);
 CREATE INDEX idx_orders_created_at ON public.orders(created_at DESC);
 
 -- ============================================================================
+-- HELPER FUNCTION TO CHECK IF USER IS ADMIN
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION is_admin(user_id uuid)
+RETURNS boolean AS $$
+BEGIN
+  RETURN (SELECT role FROM public.profiles WHERE id = user_id LIMIT 1) = 'admin';
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+
+-- ============================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
 -- ============================================================================
 
@@ -130,12 +141,12 @@ CREATE POLICY "Users can update own profile"
     FOR UPDATE
     USING (auth.uid() = id);
 
--- Admins can read all profiles (checking role in profiles table)
+-- Admins can read all profiles
 CREATE POLICY "Admins can read all profiles"
     ON public.profiles
     FOR SELECT
     USING (
-        (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin' OR
+        is_admin(auth.uid()) OR
         auth.uid() = id
     );
 
@@ -160,7 +171,7 @@ CREATE POLICY "Only admins can create products"
     ON public.products
     FOR INSERT
     WITH CHECK (
-        (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin'
+        is_admin(auth.uid())
     );
 
 -- Only admins can update products
@@ -168,7 +179,7 @@ CREATE POLICY "Only admins can update products"
     ON public.products
     FOR UPDATE
     USING (
-        (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin'
+        is_admin(auth.uid())
     );
 
 -- Only admins can delete products
@@ -176,7 +187,7 @@ CREATE POLICY "Only admins can delete products"
     ON public.products
     FOR DELETE
     USING (
-        (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin'
+        is_admin(auth.uid())
     );
 
 -- ============================================================================
@@ -228,7 +239,7 @@ CREATE POLICY "Admins can read all orders"
     ON public.orders
     FOR SELECT
     USING (
-        (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin' OR
+        is_admin(auth.uid()) OR
         auth.uid() = user_id
     );
 
@@ -237,7 +248,7 @@ CREATE POLICY "Admins can update orders"
     ON public.orders
     FOR UPDATE
     USING (
-        (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin'
+        is_admin(auth.uid())
     );
 
 -- ============================================================================
