@@ -33,7 +33,6 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose }) => 
       const cartData = await getCartWithProducts(currentUser.uid);
       setCart(cartData);
     } catch (error) {
-      console.error('Error loading cart:', error);
     } finally {
       setLoading(false);
     }
@@ -45,9 +44,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose }) => 
     try {
       await updateCartItemQuantity(currentUser.uid, productId, quantity);
       await loadCart();
-    } catch (error) {
-      console.error('Error updating quantity:', error);
-    }
+    } catch (error) {}
   };
 
   const handleRemoveItem = async (productId: string) => {
@@ -56,9 +53,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose }) => 
     try {
       await removeFromCart(currentUser.uid, productId);
       await loadCart();
-    } catch (error) {
-      console.error('Error removing item:', error);
-    }
+    } catch (error) {}
   };
 
   const calculateTotal = () => {

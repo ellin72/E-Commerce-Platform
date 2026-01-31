@@ -30,8 +30,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Listen to auth state changes
     const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session?.user?.id);
-
       if (session?.user) {
         // User is logged in
         const user: User = {
@@ -46,12 +44,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         setCurrentUser(user);
         setUserData(user);
-        console.log('User logged in:', user.uid);
       } else {
         // User is logged out
         setCurrentUser(null);
         setUserData(null);
-        console.log('User logged out');
       }
 
       setLoading(false);

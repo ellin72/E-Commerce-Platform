@@ -14,9 +14,7 @@ export const Navbar: React.FC = () => {
     try {
       await signOut();
       navigate('/login');
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
+    } catch (error) {}
   };
 
   return (

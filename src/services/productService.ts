@@ -41,8 +41,8 @@ export const createProduct = async (productData: CreateProductDto): Promise<stri
         if (imagePath) {
           await deleteFile(PRODUCT_BUCKET, imagePath);
         }
-      } catch (deleteError) {
-        console.error('Error deleting image:', deleteError);
+      } catch {
+        // Ignore cleanup errors
       }
     }
     throw new Error(`Create product failed: ${error.message}`);
@@ -100,8 +100,8 @@ export const deleteProduct = async (productId: string): Promise<void> => {
       if (imagePath) {
         await deleteFile(PRODUCT_BUCKET, imagePath);
       }
-    } catch (deleteError) {
-      console.error('Error deleting image:', deleteError);
+    } catch {
+      // Ignore cleanup errors
     }
   }
 

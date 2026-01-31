@@ -43,8 +43,6 @@ export const signUpWithEmail = async (
   password: string,
   displayName: string
 ): Promise<User> => {
-  console.log('Starting signup for:', email);
-
   let data, error;
   try {
     const result = await retryWithBackoff(
@@ -65,23 +63,16 @@ export const signUpWithEmail = async (
     data = result.data;
     error = result.error;
   } catch (err: any) {
-    console.error('Signup request failed:', err);
     throw new Error(`Sign up failed: ${err.message || 'Network error'}`);
   }
 
   if (error) {
-    console.error('Signup error:', error);
     throw new Error(`Sign up failed: ${error.message}`);
   }
 
   if (!data.user) {
-    console.error('No user data returned from signup');
     throw new Error('Sign up failed: No user returned');
   }
-
-  console.log('Signup successful:', data.user.id);
-  console.log('Email confirmation required:', data.user.email_confirmed_at === null);
-  console.log('User session:', data.session ? 'Active' : 'None (email confirmation required)');
 
   // Return user immediately - profile will be synced by AuthContext
   // The database trigger will create the profile in the background
@@ -99,8 +90,6 @@ export const signUpWithEmail = async (
  * Sign in with email and password
  */
 export const signInWithEmail = async (email: string, password: string): Promise<User> => {
-  console.log('Starting login for:', email);
-
   let data, error;
   try {
     const result = await retryWithBackoff(
@@ -115,21 +104,16 @@ export const signInWithEmail = async (email: string, password: string): Promise<
     data = result.data;
     error = result.error;
   } catch (err: any) {
-    console.error('Login request failed:', err);
     throw new Error(`Sign in failed: ${err.message || 'Network error'}`);
   }
 
   if (error) {
-    console.error('Login error:', error);
     throw new Error(`Sign in failed: ${error.message}`);
   }
 
   if (!data.user) {
-    console.error('No user data returned from login');
     throw new Error('Sign in failed: No user returned');
   }
-
-  console.log('Login successful:', data.user.id);
 
   // Return user immediately - profile will be synced by AuthContext
   return {
@@ -158,24 +142,14 @@ export const signInWithGoogle = async (): Promise<void> => {
  * Resend email confirmation
  */
 export const resendConfirmationEmail = async (email: string): Promise<void> => {
-  console.log('Attempting to resend confirmation email to:', email);
-
-  const { data, error } = await supabase.auth.resend({
+  const { error } = await supabase.auth.resend({
     type: 'signup',
     email: email,
   });
 
   if (error) {
-    console.error('Resend confirmation error:', error);
     throw new Error(`Failed to resend confirmation email: ${error.message}`);
   }
-
-  console.log('Resend confirmation response:', data);
-  console.log("⚠️ Email sent by Supabase. If you don't receive it, check:");
-  console.log('  1. Spam/Junk folder');
-  console.log('  2. Supabase Dashboard > Authentication > Settings > Email confirmations enabled');
-  console.log('  3. Supabase Dashboard > Project Settings > Auth > SMTP settings configured');
-  console.log('  4. Authentication > Email Templates > Confirm signup template exists');
 };
 
 /**
@@ -199,8 +173,6 @@ export const getUserData = async (
   retries: number = 3,
   delay: number = 1000
 ): Promise<User | null> => {
-  console.log('Fetching user data for:', userId);
-
   for (let attempt = 0; attempt < retries; attempt++) {
     let data, error;
     try {
@@ -208,30 +180,23 @@ export const getUserData = async (
       data = result.data;
       error = result.error;
     } catch (err: any) {
-      console.error(`Fetch attempt ${attempt + 1} failed:`, err.message);
       if (attempt < retries - 1) {
-        console.log(`Retrying in ${delay}ms...`);
         await new Promise((resolve) => setTimeout(resolve, delay));
         continue;
       }
-      console.error('All fetch attempts failed');
       return null;
     }
 
     if (error) {
       if (error.code === 'PGRST116') {
         // No rows returned - profile doesn't exist yet
-        console.log('No profile found for user:', userId);
         if (attempt < retries - 1) {
-          console.log(`Profile not ready yet, retrying in ${delay}ms...`);
           await new Promise((resolve) => setTimeout(resolve, delay));
           continue;
         }
         return null;
       }
-      console.error('Error fetching user data:', error);
       if (attempt < retries - 1) {
-        console.log(`Retrying in ${delay}ms...`);
         await new Promise((resolve) => setTimeout(resolve, delay));
         continue;
       }
@@ -239,16 +204,12 @@ export const getUserData = async (
     }
 
     if (!data) {
-      console.log('No data returned for user:', userId);
       if (attempt < retries - 1) {
-        console.log(`Retrying in ${delay}ms...`);
         await new Promise((resolve) => setTimeout(resolve, delay));
         continue;
       }
       return null;
     }
-
-    console.log('User data fetched:', data);
 
     const profileData = data as ProfileRow;
     return {
@@ -262,7 +223,6 @@ export const getUserData = async (
   }
 
   // All retries exhausted, profile not found
-  console.log('Profile not found after all retries');
   return null;
 };
 
@@ -286,19 +246,14 @@ export const getSession = async () => {
 };
 
 /**
- * Promote user to admin role (for development/setup only)
- * WARNING: This is for development. In production, use proper admin panel with authorization.
+ * Promote user to admin role
  */
 export const promoteToAdmin = async (email: string): Promise<void> => {
-  console.warn('⚠️ Promoting user to admin:', email);
-
   const { error } = await supabase.from('profiles').update({ role: 'admin' }).eq('email', email);
 
   if (error) {
     throw new Error(`Failed to promote user to admin: ${error.message}`);
   }
-
-  console.log('✅ User promoted to admin:', email);
 };
 
 /**
@@ -310,8 +265,6 @@ export const demoteFromAdmin = async (email: string): Promise<void> => {
   if (error) {
     throw new Error(`Failed to demote user: ${error.message}`);
   }
-
-  console.log('User demoted to user role:', email);
 };
 
 /**
@@ -325,7 +278,6 @@ export const getUserRole = async (email: string): Promise<'user' | 'admin' | nul
     .single();
 
   if (error) {
-    console.error('Failed to fetch user role:', error);
     return null;
   }
 

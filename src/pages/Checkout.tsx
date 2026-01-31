@@ -32,7 +32,6 @@ export const Checkout: React.FC = () => {
       const cartData = await getCartWithProducts(currentUser.uid);
       setCart(cartData);
     } catch (error) {
-      console.error('Error loading cart:', error);
     } finally {
       setLoading(false);
     }
@@ -59,7 +58,6 @@ export const Checkout: React.FC = () => {
       alert('Order placed successfully!');
       navigate(`/orders`);
     } catch (error) {
-      console.error('Error placing order:', error);
       alert('Failed to place order');
     } finally {
       setSubmitting(false);

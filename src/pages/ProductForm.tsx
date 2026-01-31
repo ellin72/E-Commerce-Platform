@@ -40,7 +40,6 @@ export const ProductForm: React.FC = () => {
         setCurrentImageUrl(product.imageUrl);
       }
     } catch (error) {
-      console.error('Error loading product:', error);
       alert('Failed to load product');
     } finally {
       setLoadingProduct(false);
@@ -82,7 +81,6 @@ export const ProductForm: React.FC = () => {
 
       navigate('/admin');
     } catch (error) {
-      console.error('Error saving product:', error);
       alert('Failed to save product');
     } finally {
       setLoading(false);
