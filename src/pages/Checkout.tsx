@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/useAuthHook';
 import { getCartWithProducts } from '../services/cartService';
 import { createOrder } from '../services/orderService';
 import { Cart, Order } from '../types';
@@ -20,12 +20,6 @@ export const Checkout: React.FC = () => {
     country: '',
   });
 
-  useEffect(() => {
-    if (currentUser) {
-      loadCart();
-    }
-  }, [currentUser, loadCart]);
-
   const loadCart = useCallback(async () => {
     if (!currentUser) return;
 
@@ -39,6 +33,12 @@ export const Checkout: React.FC = () => {
       setLoading(false);
     }
   }, [currentUser]);
+
+  useEffect(() => {
+    if (currentUser) {
+      loadCart();
+    }
+  }, [currentUser, loadCart]);
 
   const calculateTotal = () => {
     if (!cart) return 0;

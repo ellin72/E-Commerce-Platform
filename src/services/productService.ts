@@ -40,24 +40,26 @@ export const createProduct = async (productData: CreateProductDto): Promise<stri
     );
   }
 
-  const { data, error } = await withTimeout(
-    supabase
-      .from('products')
-      .insert([
-        {
-          name: productData.name,
-          description: productData.description,
-          price: productData.price,
-          category: productData.category,
-          stock: productData.stock,
-          image_url: imageUrl,
-        },
-      ])
-      .select('id')
-      .single(),
+  const { data, error } = (await withTimeout(
+    Promise.resolve(
+      supabase
+        .from('products')
+        .insert([
+          {
+            name: productData.name,
+            description: productData.description,
+            price: productData.price,
+            category: productData.category,
+            stock: productData.stock,
+            image_url: imageUrl,
+          },
+        ])
+        .select('id')
+        .single()
+    ),
     20000,
     'Product save'
-  );
+  )) as { data: ProductRow | null; error: unknown };
 
   if (error) {
     // Delete uploaded image if insert fails
@@ -71,7 +73,12 @@ export const createProduct = async (productData: CreateProductDto): Promise<stri
         // Ignore cleanup errors
       }
     }
-    throw new Error(`Create product failed: ${error.message}`);
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    throw new Error(`Create product failed: ${errorMsg}`);
+  }
+
+  if (!data) {
+    throw new Error('Create product failed: No data returned');
   }
 
   return data.id;

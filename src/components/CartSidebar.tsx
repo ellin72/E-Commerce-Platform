@@ -6,7 +6,7 @@ import {
   removeFromCart,
 } from '../services/cartService';
 import { Cart } from '../types';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/useAuthHook';
 
 interface CartSidebarProps {
   isOpen: boolean;

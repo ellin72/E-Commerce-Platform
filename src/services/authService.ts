@@ -1,4 +1,4 @@
-import { supabase, supabaseAnonKey, supabaseUrl } from '../lib/supabaseClient';
+import { supabase } from '../lib/supabaseClient';
 import { User } from '../types';
 import type { Database } from '../types/database.types';
 
@@ -17,11 +17,12 @@ const retryWithBackoff = async <T>(
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       return await fn();
-    } catch (error: Error | unknown) {
-      lastError = error as Error;
+    } catch (error: unknown) {
+      const err = error as Error & { status?: number };
+      lastError = err;
 
       // Only retry on 429 (Too Many Requests) errors
-      if (error.status !== 429) {
+      if (err.status !== 429) {
         throw error;
       }
 
@@ -103,8 +104,9 @@ export const signInWithEmail = async (email: string, password: string): Promise<
     );
     data = result.data;
     error = result.error;
-  } catch (err: any) {
-    throw new Error(`Sign in failed: ${err.message || 'Network error'}`);
+  } catch (err: unknown) {
+    const error = err instanceof Error ? err : new Error(String(err));
+    throw new Error(`Sign in failed: ${error.message || 'Network error'}`);
   }
 
   if (error) {
@@ -179,7 +181,7 @@ export const getUserData = async (
       const result = await supabase.from('profiles').select('*').eq('id', userId).single();
       data = result.data;
       error = result.error;
-    } catch (err: Error | unknown) {
+    } catch {
       if (attempt < retries - 1) {
         await new Promise((resolve) => setTimeout(resolve, delay));
         continue;

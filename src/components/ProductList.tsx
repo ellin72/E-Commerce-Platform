@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { getAllProducts, searchProducts, getProductsByCategory } from '../services/productService';
 import { addToCart } from '../services/cartService';
 import { Product } from '../types';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/useAuthHook';
 
 export const ProductList: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -13,10 +13,6 @@ export const ProductList: React.FC = () => {
   const { currentUser } = useAuth();
 
   const categories = ['all', 'electronics', 'clothing', 'books', 'home', 'sports'];
-
-  useEffect(() => {
-    loadProducts();
-  }, [loadProducts]);
 
   const loadProducts = useCallback(async () => {
     try {
@@ -36,6 +32,10 @@ export const ProductList: React.FC = () => {
       setLoading(false);
     }
   }, [selectedCategory]);
+
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
 
   const handleSearch = async () => {
     if (searchTerm.trim()) {
