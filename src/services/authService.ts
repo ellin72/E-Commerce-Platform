@@ -286,6 +286,53 @@ export const getSession = async () => {
 };
 
 /**
+ * Promote user to admin role (for development/setup only)
+ * WARNING: This is for development. In production, use proper admin panel with authorization.
+ */
+export const promoteToAdmin = async (email: string): Promise<void> => {
+  console.warn('⚠️ Promoting user to admin:', email);
+
+  const { error } = await supabase.from('profiles').update({ role: 'admin' }).eq('email', email);
+
+  if (error) {
+    throw new Error(`Failed to promote user to admin: ${error.message}`);
+  }
+
+  console.log('✅ User promoted to admin:', email);
+};
+
+/**
+ * Demote admin to regular user role
+ */
+export const demoteFromAdmin = async (email: string): Promise<void> => {
+  const { error } = await supabase.from('profiles').update({ role: 'user' }).eq('email', email);
+
+  if (error) {
+    throw new Error(`Failed to demote user: ${error.message}`);
+  }
+
+  console.log('User demoted to user role:', email);
+};
+
+/**
+ * Get user's role
+ */
+export const getUserRole = async (email: string): Promise<'user' | 'admin' | null> => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('email', email)
+    .single();
+
+  if (error) {
+    console.error('Failed to fetch user role:', error);
+    return null;
+  }
+
+  return (data?.role as 'user' | 'admin') || null;
+};
+
+/**
  * Listen to auth state changes
  */
 export const onAuthStateChanged = (callback: (user: User | null) => void) => {
